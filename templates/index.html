@@ -8,8 +8,49 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
         body { background: #f8fafc; color: #0f172a; min-height: 100vh; display: flex; flex-direction: column; }
         
+        /* Top Notification / Text Bar */
+        .top-ticker-bar {
+            background: #090d16;
+            color: #94a3b8;
+            font-size: 12px;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            font-weight: 500;
+        }
+        .ticker-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #f8fafc;
+        }
+        .ticker-message .live-dot {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #22c55e;
+        }
+        .top-nav-links {
+            display: flex;
+            gap: 16px;
+        }
+        .top-nav-links a {
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .top-nav-links a:hover {
+            color: #f59e0b;
+        }
+
         /* Modern Header */
-        .navbar { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 26px 20px 36px 20px; text-align: center; }
+        .navbar { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 26px 20px 34px 20px; text-align: center; }
         .nav-logo { font-size: 30px; font-weight: 900; letter-spacing: -0.5px; text-decoration: none; color: white; display: inline-block; cursor: pointer; }
         .nav-logo span { color: #f59e0b; }
         .nav-sub { font-size: 14px; color: #94a3b8; margin-top: 6px; font-weight: 500; }
@@ -101,10 +142,30 @@
         /* Footer */
         .footer { background: white; border-top: 1px solid #e2e8f0; padding: 25px 20px; text-align: center; font-size: 12px; color: #64748b; margin-top: auto; }
         .footer p { margin-bottom: 6px; }
+
+        @media(max-width: 600px) {
+            .top-nav-links { display: none; }
+            .top-ticker-bar { justify-content: center; text-align: center; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- Top Text Bar / Header Ticker -->
+    <div class="top-ticker-bar">
+        <div class="ticker-message">
+            <span class="live-dot"></span>
+            <span><b>PriceDekho Live:</b> Sabhi top online stores ke authentic prices & direct deals track ho rahe hain!</span>
+        </div>
+        <div class="top-nav-links">
+            <a href="/?q=5G Phones">⚡ 5G Mobiles</a>
+            <a href="/?q=Apple iPhone">🍎 iPhones</a>
+            <a href="/?q=Samsung Galaxy">🪐 Samsung</a>
+            <a href="/?q=Best Laptops">💻 Laptops</a>
+        </div>
+    </div>
+
+    <!-- Main Navigation Header -->
     <div class="navbar">
         <a href="/" class="nav-logo">🔍 Price<span>Dekho</span></a>
         <p class="nav-sub">India's Smart Live Mobile Price & Specs Comparison Engine</p>
