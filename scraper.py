@@ -20,33 +20,60 @@ FLIPKART_HEADERS = {
     "Referer": "https://www.google.com/"
 }
 
+COLORS_LIST = [
+    "Black", "White", "Blue", "Green", "Titanium", "Gold", "Silver", 
+    "Grey", "Gray", "Purple", "Red", "Yellow", "Orange", "Pink", 
+    "Midnight", "Starlight", "Natural Titanium", "Desert Titanium", 
+    "Phantom Black", "Cream", "Violet", "Amber Yellow", "Cobalt Violet"
+]
+
 def clean_price(price_str):
     if not price_str:
         return 0
     numeric_value = re.sub(r'[^\d]', '', str(price_str))
     return int(numeric_value) if numeric_value else 0
 
-def extract_specs(raw_text):
-    """Product title ya spec text se RAM, Storage, aur Battery nikalne ke liye"""
-    specs = {}
+def extract_phone_specs(title, query=""):
+    specs = {
+        "model": "",
+        "ram": "",
+        "color": "",
+        "storage": ""
+    }
     
-    # 1. RAM Detection (e.g. 8GB RAM, 12 GB RAM)
-    ram_match = re.search(r'(\d+\s*GB)\s*RAM', raw_text, re.IGNORECASE)
-    if ram_match:
-        specs['ram'] = ram_match.group(1).upper().replace(" ", "")
-    
-    # 2. Storage Detection (e.g. 128GB, 256GB, 512GB, 1TB Storage/ROM)
-    storage_match = re.search(r'(\d+\s*(?:GB|TB))\s*(?:Storage|ROM)?', raw_text, re.IGNORECASE)
-    if storage_match:
-        val = storage_match.group(1).upper().replace(" ", "")
-        # Filter taaki RAM ko storage na samajh le agar dono same hon
-        if specs.get('ram') != val:
-            specs['storage'] = val
-            
-    # 3. Battery Detection (e.g. 5000 mAh, 4500mAh)
-    battery_match = re.search(r'(\d{4,5}\s*mAh)', raw_text, re.IGNORECASE)
-    if battery_match:
-        specs['battery'] = battery_match.group(1).replace(" ", "")
+    clean_t = title.replace("(", " ").replace(")", " ").replace(",", " ")
+
+    # 1. RAM Detection (e.g. 8GB RAM, 12 GB, 8GB/128GB)
+    ram_combo = re.search(r'(\d+)\s*GB\s*[\/\+]\s*(\d+)\s*(GB|TB)', clean_t, re.IGNORECASE)
+    if ram_combo:
+        specs["ram"] = f"{ram_combo.group(1)}GB"
+        specs["storage"] = f"{ram_combo.group(2)}{ram_combo.group(3).upper()}"
+    else:
+        ram_match = re.search(r'\b(\d+)\s*GB\s*RAM\b', clean_t, re.IGNORECASE)
+        if ram_match:
+            specs["ram"] = f"{ram_match.group(1)}GB"
+
+    # 2. Storage Detection (Agar combo me na mila ho)
+    if not specs["storage"]:
+        storage_match = re.search(r'\b(64|128|256|512)\s*GB\b|\b(1|2)\s*TB\b', clean_t, re.IGNORECASE)
+        if storage_match:
+            val = storage_match.group(0).upper().replace(" ", "")
+            if specs["ram"] != val:
+                specs["storage"] = val
+
+    # 3. Color Detection
+    for c in COLORS_LIST:
+        if re.search(rf'\b{re.escape(c)}\b', title, re.IGNORECASE):
+            specs["color"] = c
+            break
+
+    # 4. Model Name / Model No Detection
+    # Brand and core device extract karein
+    model_match = re.search(r'((?:Samsung|Apple|iPhone|OnePlus|Realme|Redmi|Xiaomi|iQOO|Vivo|Oppo|Motorola|Poco)\s+[A-Za-z0-9\+\s]+?)(?=\s*\(|\s*\d+\s*GB|\s*5G|\s*,|$)', title, re.IGNORECASE)
+    if model_match:
+        specs["model"] = model_match.group(1).strip()
+    else:
+        specs["model"] = query.title()
 
     return specs
 
@@ -79,11 +106,11 @@ def get_amazon_live_results(query):
                         link += f"&tag={AMAZON_ASSOCIATE_TAG}"
                         
                     img = img_elem['src'] if img_elem else ""
-                    specs = extract_specs(full_title)
+                    specs = extract_phone_specs(full_title, query)
 
                     items.append({
                         "platform": "Amazon",
-                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
+                        "title": specs["model"],
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#ff9900",
@@ -95,15 +122,16 @@ def get_amazon_live_results(query):
         print(f"Amazon error: {err}")
 
     if not items:
+        specs = extract_phone_specs(query, query)
         items.append({
             "platform": "Amazon",
-            "title": f"{query.title()} (Latest Online Price)",
+            "title": specs["model"],
             "price": "Check Live Deal",
             "numeric_price": 0,
             "badge_color": "#ff9900",
             "buy_url": url,
             "image": "",
-            "specs": {}
+            "specs": specs
         })
     return items
 
@@ -129,12 +157,6 @@ def get_flipkart_live_results(query):
                 link_elem = card.select_one("a[href*='/p/'], a.CGtC5Q, a._1fQZEK")
                 img_elem = card.select_one("img.DByuf4, img._396cs4, img")
                 
-                # Flipkart spec snippet (ul/li lists)
-                specs_text = ""
-                spec_elements = card.select("ul li, div._6NESgJ")
-                if spec_elements:
-                    specs_text = " ".join([li.get_text(strip=True) for li in spec_elements])
-
                 if title_elem and price_elem:
                     full_title = title_elem.get_text(strip=True)
                     price = price_elem.get_text(strip=True)
@@ -142,13 +164,11 @@ def get_flipkart_live_results(query):
                     link = f"https://www.flipkart.com{href}" if href.startswith('/') else url
                     img = img_elem['src'] if img_elem else ""
                     
-                    # Specs nikalna (title + spec list mila kar)
-                    combined_text = f"{full_title} {specs_text}"
-                    specs = extract_specs(combined_text)
+                    specs = extract_phone_specs(full_title, query)
 
                     items.append({
                         "platform": "Flipkart",
-                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
+                        "title": specs["model"],
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#2874f0",
@@ -160,15 +180,16 @@ def get_flipkart_live_results(query):
         print(f"Flipkart error: {err}")
 
     if not items:
+        specs = extract_phone_specs(query, query)
         items.append({
             "platform": "Flipkart",
-            "title": f"{query.title()} on Flipkart",
+            "title": specs["model"],
             "price": "Check Live Deal",
             "numeric_price": 0,
             "badge_color": "#2874f0",
             "buy_url": url,
             "image": "",
-            "specs": {}
+            "specs": specs
         })
     return items
 
@@ -176,26 +197,4 @@ def fetch_all_deals(query):
     deals = []
     deals.extend(get_amazon_live_results(query))
     deals.extend(get_flipkart_live_results(query))
-
-    encoded_query = urllib.parse.quote(query)
-    deals.append({
-        "platform": "Croma",
-        "title": f"{query.title()} on Croma Store",
-        "price": "Check Offers",
-        "numeric_price": 0,
-        "badge_color": "#00b5b8",
-        "buy_url": f"https://www.croma.com/searchB?q={encoded_query}",
-        "image": "",
-        "specs": {}
-    })
-    deals.append({
-        "platform": "Reliance Digital",
-        "title": f"{query.title()} on Reliance Store",
-        "price": "Check Offers",
-        "numeric_price": 0,
-        "badge_color": "#e42529",
-        "buy_url": f"https://www.reliancedigital.in/search?q={encoded_query}",
-        "image": "",
-        "specs": {}
-    })
     return deals
