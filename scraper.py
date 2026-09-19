@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 AMAZON_ASSOCIATE_TAG = "pricedekho085-21"
 FLIPKART_AFF_ID = "youraffid"
 
-# Desktop Headers for Amazon
 AMAZON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept-Language": "en-IN,en-GB;q=0.9,en;q=0.8",
@@ -14,7 +13,6 @@ AMAZON_HEADERS = {
     "Referer": "https://www.google.com/"
 }
 
-# Mobile/API-friendly Headers for Flipkart to bypass desktop block
 FLIPKART_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 13; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
     "Accept-Language": "en-IN,en-US;q=0.9,en;q=0.8",
@@ -27,6 +25,30 @@ def clean_price(price_str):
         return 0
     numeric_value = re.sub(r'[^\d]', '', str(price_str))
     return int(numeric_value) if numeric_value else 0
+
+def extract_specs(raw_text):
+    """Product title ya spec text se RAM, Storage, aur Battery nikalne ke liye"""
+    specs = {}
+    
+    # 1. RAM Detection (e.g. 8GB RAM, 12 GB RAM)
+    ram_match = re.search(r'(\d+\s*GB)\s*RAM', raw_text, re.IGNORECASE)
+    if ram_match:
+        specs['ram'] = ram_match.group(1).upper().replace(" ", "")
+    
+    # 2. Storage Detection (e.g. 128GB, 256GB, 512GB, 1TB Storage/ROM)
+    storage_match = re.search(r'(\d+\s*(?:GB|TB))\s*(?:Storage|ROM)?', raw_text, re.IGNORECASE)
+    if storage_match:
+        val = storage_match.group(1).upper().replace(" ", "")
+        # Filter taaki RAM ko storage na samajh le agar dono same hon
+        if specs.get('ram') != val:
+            specs['storage'] = val
+            
+    # 3. Battery Detection (e.g. 5000 mAh, 4500mAh)
+    battery_match = re.search(r'(\d{4,5}\s*mAh)', raw_text, re.IGNORECASE)
+    if battery_match:
+        specs['battery'] = battery_match.group(1).replace(" ", "")
+
+    return specs
 
 def get_amazon_live_results(query):
     encoded_query = urllib.parse.quote(query)
@@ -41,7 +63,6 @@ def get_amazon_live_results(query):
             soup = BeautifulSoup(resp.content, "html.parser")
             cards = soup.select("div[data-component-type='s-search-result']")
             
-            # Top 8 products fetch karega
             for card in cards[:8]:
                 title_elem = card.select_one("h2 span")
                 price_whole = card.select_one("span.a-price-whole")
@@ -49,7 +70,7 @@ def get_amazon_live_results(query):
                 img_elem = card.select_one("img.s-image")
 
                 if title_elem and price_whole:
-                    title = title_elem.get_text(strip=True)
+                    full_title = title_elem.get_text(strip=True)
                     price_val = price_whole.get_text(strip=True).replace('.', '').strip()
                     price = f"₹{price_val}"
                     
@@ -58,15 +79,17 @@ def get_amazon_live_results(query):
                         link += f"&tag={AMAZON_ASSOCIATE_TAG}"
                         
                     img = img_elem['src'] if img_elem else ""
+                    specs = extract_specs(full_title)
 
                     items.append({
                         "platform": "Amazon",
-                        "title": title[:70] + ("..." if len(title) > 70 else ""),
+                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#ff9900",
                         "buy_url": link,
-                        "image": img
+                        "image": img,
+                        "specs": specs
                     })
     except Exception as err:
         print(f"Amazon error: {err}")
@@ -79,7 +102,8 @@ def get_amazon_live_results(query):
             "numeric_price": 0,
             "badge_color": "#ff9900",
             "buy_url": url,
-            "image": ""
+            "image": "",
+            "specs": {}
         })
     return items
 
@@ -94,34 +118,43 @@ def get_flipkart_live_results(query):
         
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, "html.parser")
-            
-            # Flipkart product card containers (covers mobile & desktop layout)
             cards = soup.select("div[data-id], div._1AtVbE, div.tUxRFH, div._75nlfW")
             
             for card in cards:
-                if len(items) >= 6:  # Top 6 Flipkart products
+                if len(items) >= 6:
                     break
                     
-                title_elem = card.select_one("div.KzDlHZ, div._4rR01T, a.wjcEIp, div._2WkVRV, div.row")
+                title_elem = card.select_one("div.KzDlHZ, div._4rR01T, a.wjcEIp, div._2WkVRV")
                 price_elem = card.select_one("div.Nx9bqj, div._30jeq3, div._25b18c")
                 link_elem = card.select_one("a[href*='/p/'], a.CGtC5Q, a._1fQZEK")
                 img_elem = card.select_one("img.DByuf4, img._396cs4, img")
+                
+                # Flipkart spec snippet (ul/li lists)
+                specs_text = ""
+                spec_elements = card.select("ul li, div._6NESgJ")
+                if spec_elements:
+                    specs_text = " ".join([li.get_text(strip=True) for li in spec_elements])
 
                 if title_elem and price_elem:
-                    title = title_elem.get_text(strip=True)
+                    full_title = title_elem.get_text(strip=True)
                     price = price_elem.get_text(strip=True)
                     href = link_elem['href'] if link_elem else ""
                     link = f"https://www.flipkart.com{href}" if href.startswith('/') else url
                     img = img_elem['src'] if img_elem else ""
+                    
+                    # Specs nikalna (title + spec list mila kar)
+                    combined_text = f"{full_title} {specs_text}"
+                    specs = extract_specs(combined_text)
 
                     items.append({
                         "platform": "Flipkart",
-                        "title": title[:70] + ("..." if len(title) > 70 else ""),
+                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#2874f0",
                         "buy_url": link,
-                        "image": img
+                        "image": img,
+                        "specs": specs
                     })
     except Exception as err:
         print(f"Flipkart error: {err}")
@@ -134,35 +167,35 @@ def get_flipkart_live_results(query):
             "numeric_price": 0,
             "badge_color": "#2874f0",
             "buy_url": url,
-            "image": ""
+            "image": "",
+            "specs": {}
         })
     return items
 
 def fetch_all_deals(query):
     deals = []
-    
-    # Live Results fetch
     deals.extend(get_amazon_live_results(query))
     deals.extend(get_flipkart_live_results(query))
 
-    # Croma & Reliance quick search links
     encoded_query = urllib.parse.quote(query)
     deals.append({
-        "platform": "Croma (Tata)",
-        "title": f"{query.title()} on Croma",
+        "platform": "Croma",
+        "title": f"{query.title()} on Croma Store",
         "price": "Check Offers",
         "numeric_price": 0,
         "badge_color": "#00b5b8",
         "buy_url": f"https://www.croma.com/searchB?q={encoded_query}",
-        "image": ""
+        "image": "",
+        "specs": {}
     })
     deals.append({
         "platform": "Reliance Digital",
-        "title": f"{query.title()} on Reliance Digital",
+        "title": f"{query.title()} on Reliance Store",
         "price": "Check Offers",
         "numeric_price": 0,
         "badge_color": "#e42529",
         "buy_url": f"https://www.reliancedigital.in/search?q={encoded_query}",
-        "image": ""
+        "image": "",
+        "specs": {}
     })
     return deals
