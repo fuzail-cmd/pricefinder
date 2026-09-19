@@ -2,7 +2,7 @@ import urllib.parse
 import re
 
 # Affiliate IDs / Aggregator Tags
-AMAZON_TAG = "yourtag-21"
+AMAZON_ASSOCIATE_TAG = "pricedekho085-21"
 FLIPKART_AFF_ID = "youraffid"
 EARNKARO_REF = "your_earnkaro_id"
 
