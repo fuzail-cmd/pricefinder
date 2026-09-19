@@ -67,14 +67,14 @@ def extract_phone_specs(title, query=""):
             specs["color"] = c
             break
 
-    # 4. Smart Model / Name Extraction
+    # 4. Smart Model Name
     model_match = re.search(r'((?:Samsung|Apple|iPhone|OnePlus|Realme|Redmi|Xiaomi|iQOO|Vivo|Oppo|Motorola|Poco|Google Pixel)\s+[A-Za-z0-9\+\s]+?)(?=\s*\(|\s*\d+\s*GB|\s*5G|\s*,|$)', title, re.IGNORECASE)
     if model_match:
         specs["model"] = model_match.group(1).strip()
     else:
         specs["model"] = query.title()
 
-    # Fallback Defaults taaki koi bhi field khali na dikhe
+    # Defaults
     is_iphone = "iphone" in (query.lower() + title.lower())
     if not specs["storage"]:
         specs["storage"] = "128GB" if is_iphone else "256GB"
@@ -107,9 +107,11 @@ def get_amazon_live_results(query):
                 if title_elem:
                     full_title = title_elem.get_text(strip=True)
                     price = "Check Live Deal"
+                    num_p = 0
                     if price_whole:
                         price_val = price_whole.get_text(strip=True).replace('.', '').strip()
                         price = f"₹{price_val}"
+                        num_p = clean_price(price_val)
                     
                     link = "https://www.amazon.in" + link_elem['href'] if link_elem else url
                     if AMAZON_ASSOCIATE_TAG not in link:
@@ -122,7 +124,7 @@ def get_amazon_live_results(query):
                         "platform": "Amazon",
                         "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
-                        "numeric_price": clean_price(price),
+                        "numeric_price": num_p,
                         "badge_color": "#ff9900",
                         "buy_url": link,
                         "image": img,
@@ -131,18 +133,6 @@ def get_amazon_live_results(query):
     except Exception as err:
         print(f"Amazon error: {err}")
 
-    if not items:
-        specs = extract_phone_specs(query, query)
-        items.append({
-            "platform": "Amazon",
-            "title": f"{query.title()} (Latest Variant)",
-            "price": "Check Live Deal",
-            "numeric_price": 0,
-            "badge_color": "#ff9900",
-            "buy_url": url,
-            "image": "",
-            "specs": specs
-        })
     return items
 
 def get_flipkart_live_results(query):
@@ -170,6 +160,8 @@ def get_flipkart_live_results(query):
                 if title_elem:
                     full_title = title_elem.get_text(strip=True)
                     price = price_elem.get_text(strip=True) if price_elem else "Check Live Deal"
+                    num_p = clean_price(price) if price_elem else 0
+                    
                     href = link_elem['href'] if link_elem else ""
                     link = f"https://www.flipkart.com{href}" if href.startswith('/') else url
                     img = img_elem['src'] if img_elem else ""
@@ -180,7 +172,7 @@ def get_flipkart_live_results(query):
                         "platform": "Flipkart",
                         "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
-                        "numeric_price": clean_price(price),
+                        "numeric_price": num_p,
                         "badge_color": "#2874f0",
                         "buy_url": link,
                         "image": img,
@@ -189,67 +181,58 @@ def get_flipkart_live_results(query):
     except Exception as err:
         print(f"Flipkart error: {err}")
 
-    if not items:
-        specs = extract_phone_specs(query, query)
-        items.append({
-            "platform": "Flipkart",
-            "title": f"{query.title()} on Flipkart",
-            "price": "Check Live Deal",
-            "numeric_price": 0,
-            "badge_color": "#2874f0",
-            "buy_url": url,
-            "image": "",
-            "specs": specs
-        })
     return items
 
 def fetch_all_deals(query):
-    deals = []
+    live_deals = []
     
-    # 1. Amazon live
-    deals.extend(get_amazon_live_results(query))
-    
-    # 2. Flipkart live
-    deals.extend(get_flipkart_live_results(query))
+    # 1. Amazon aur Flipkart se data layein
+    live_deals.extend(get_amazon_live_results(query))
+    live_deals.extend(get_flipkart_live_results(query))
 
-    # 3. Baaki Top E-Commerce Platforms (Croma, Reliance, Tata CLiQ)
+    # 2. Sorting: Jinka price available hai unhe Sabse Mehanga (High) se Sabse Sasta (Low) sort karein
+    priced_items = [d for d in live_deals if d.get("numeric_price", 0) > 0]
+    priced_items.sort(key=lambda x: x["numeric_price"], reverse=True)
+
+    # 3. Jinka exact price scrape nahi hua unhe alag rakhein
+    unpriced_items = [d for d in live_deals if d.get("numeric_price", 0) == 0]
+
+    # 4. Other stores (Croma, Reliance, Tata CLiQ)
     encoded_query = urllib.parse.quote(query)
     base_specs = extract_phone_specs(query, query)
-
     other_stores = [
         {
             "platform": "Croma (Tata)",
             "title": f"{query.title()} on Croma Store",
             "price": "Check Store Offers",
+            "numeric_price": 0,
             "badge_color": "#00b5b8",
-            "buy_url": f"https://www.croma.com/searchB?q={encoded_query}"
+            "buy_url": f"https://www.croma.com/searchB?q={encoded_query}",
+            "image": "",
+            "specs": base_specs
         },
         {
             "platform": "Reliance Digital",
             "title": f"{query.title()} on Reliance Digital",
             "price": "Check Instant Cashback",
+            "numeric_price": 0,
             "badge_color": "#e42529",
-            "buy_url": f"https://www.reliancedigital.in/search?q={encoded_query}"
+            "buy_url": f"https://www.reliancedigital.in/search?q={encoded_query}",
+            "image": "",
+            "specs": base_specs
         },
         {
             "platform": "Tata CLiQ",
             "title": f"{query.title()} on Tata CLiQ",
             "price": "Check Brand Warranty",
+            "numeric_price": 0,
             "badge_color": "#212121",
-            "buy_url": f"https://www.tatacliq.com/search/?searchCategory=all&text={encoded_query}"
+            "buy_url": f"https://www.tatacliq.com/search/?searchCategory=all&text={encoded_query}",
+            "image": "",
+            "specs": base_specs
         }
     ]
 
-    for store in other_stores:
-        deals.append({
-            "platform": store["platform"],
-            "title": store["title"],
-            "price": store["price"],
-            "numeric_price": 0,
-            "badge_color": store["badge_color"],
-            "buy_url": store["buy_url"],
-            "image": "",
-            "specs": base_specs
-        })
-
-    return deals
+    # Final combined list: Sabse pehle sorted mehanga-se-sasta live items, fir baaki stores
+    final_deals = priced_items + unpriced_items + other_stores
+    return final_deals
