@@ -24,10 +24,14 @@ FLIPKART_HEADERS = {
 }
 
 COLORS_LIST = [
-    "Titanium Black", "Titanium Gray", "Natural Titanium", "Desert Titanium",
-    "Phantom Black", "Midnight", "Starlight", "Obsidian", "Bay Blue",
-    "Black", "White", "Blue", "Green", "Gold", "Silver", "Grey", 
-    "Purple", "Red", "Yellow", "Orange", "Pink", "Violet", "Cream"
+    "Black", "White", "Blue", "Green", "Red", "Grey", "Yellow", "Orange", 
+    "Pink", "Silver", "Gold", "Brown", "Navy", "Beige", "Titanium"
+]
+
+MOBILE_KEYWORDS = [
+    "phone", "mobile", "smartphone", "iphone", "samsung", "galaxy", "oneplus",
+    "redmi", "realme", "xiaomi", "vivo", "oppo", "iqoo", "poco", "pixel", "motorola",
+    "5g", "pro max", "ultra", "nord"
 ]
 
 def clean_price(price_str):
@@ -36,17 +40,41 @@ def clean_price(price_str):
     numeric_value = re.sub(r'[^\d]', '', str(price_str))
     return int(numeric_value) if numeric_value else 0
 
-def extract_phone_specs(title, query=""):
+def is_mobile_query(query, title=""):
+    combined = (query + " " + title).lower()
+    return any(k in combined for k in MOBILE_KEYWORDS)
+
+def extract_specs(title, query=""):
+    """Sirf tabhi specs nikalega agar item mobile ho, shoes/fashion ke liye empty specs dega"""
+    clean_t = title.replace("(", " ").replace(")", " ").replace(",", " ")
+    
+    # Check color for all items
+    item_color = ""
+    for c in COLORS_LIST:
+        if re.search(rf'\b{re.escape(c)}\b', title, re.IGNORECASE):
+            item_color = c
+            break
+
+    if not is_mobile_query(query, title):
+        # Non-mobile product (Shoes, clothes, accessories etc.)
+        return {
+            "is_phone": False,
+            "model": query.title(),
+            "ram": "",
+            "storage": "",
+            "color": item_color
+        }
+
+    # Mobile item specs extraction
     specs = {
+        "is_phone": True,
         "model": "",
         "ram": "",
-        "color": "",
+        "color": item_color or "Standard Edition",
         "storage": ""
     }
-    
-    clean_t = title.replace("(", " ").replace(")", " ").replace(",", " ")
 
-    # 1. RAM
+    # 1. RAM & Storage Combo
     ram_combo = re.search(r'(\d+)\s*GB\s*[\/\+]\s*(\d+)\s*(GB|TB)', clean_t, re.IGNORECASE)
     if ram_combo:
         specs["ram"] = f"{ram_combo.group(1)}GB"
@@ -64,26 +92,12 @@ def extract_phone_specs(title, query=""):
             if specs.get("ram") != val:
                 specs["storage"] = val
 
-    # 3. Color
-    for c in COLORS_LIST:
-        if re.search(rf'\b{re.escape(c)}\b', title, re.IGNORECASE):
-            specs["color"] = c
-            break
-
-    # 4. Model Name
+    # 3. Model
     model_match = re.search(r'((?:Samsung|Apple|iPhone|OnePlus|Realme|Redmi|Xiaomi|iQOO|Vivo|Oppo|Motorola|Poco|Google Pixel)\s+[A-Za-z0-9\+\s]+?)(?=\s*\(|\s*\d+\s*GB|\s*5G|\s*,|$)', title, re.IGNORECASE)
     if model_match:
         specs["model"] = model_match.group(1).strip()
     else:
         specs["model"] = query.title()
-
-    is_iphone = "iphone" in (query.lower() + title.lower())
-    if not specs["storage"]:
-        specs["storage"] = "128GB" if is_iphone else "256GB"
-    if not specs["ram"]:
-        specs["ram"] = "8GB" if is_iphone else "12GB"
-    if not specs["color"]:
-        specs["color"] = "Titanium Black" if is_iphone else "Midnight Black"
 
     return specs
 
@@ -117,11 +131,11 @@ def get_amazon_live_results(query):
                         link += f"&tag={AMAZON_ASSOCIATE_TAG}"
                         
                     img = img_elem['src'] if img_elem else ""
-                    specs = extract_phone_specs(full_title, query)
+                    specs = extract_specs(full_title, query)
 
                     items.append({
                         "platform": "Amazon",
-                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
+                        "title": full_title[:80] + ("..." if len(full_title) > 80 else ""),
                         "price": price,
                         "numeric_price": num_p,
                         "badge_color": "#ff9900",
@@ -160,11 +174,11 @@ def get_flipkart_live_results(query):
                     price = price_elem.get_text(strip=True)
                     num_p = clean_price(price)
                     img = img_elem['src'] if img_elem else ""
-                    specs = extract_phone_specs(full_title, query)
+                    specs = extract_specs(full_title, query)
 
                     items.append({
                         "platform": "Flipkart",
-                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
+                        "title": full_title[:80] + ("..." if len(full_title) > 80 else ""),
                         "price": price,
                         "numeric_price": num_p,
                         "badge_color": "#2874f0",
@@ -177,43 +191,70 @@ def get_flipkart_live_results(query):
 
     return items
 
-def generate_ecommerce_variants(platform, query, base_price, badge_color, buy_url, count=7):
-    """Har e-commerce store ke kam se kam 7-8 genuine variants banata hai agar server scrape block ho"""
-    variants_meta = [
-        {"storage": "1TB", "ram": "16GB", "color": "Desert Titanium", "diff": 35000},
-        {"storage": "512GB", "ram": "12GB", "color": "Natural Titanium", "diff": 20000},
-        {"storage": "512GB", "ram": "12GB", "color": "Phantom Black", "diff": 18000},
-        {"storage": "256GB", "ram": "12GB", "color": "Titanium Gray", "diff": 6000},
-        {"storage": "256GB", "ram": "8GB", "color": "Midnight Blue", "diff": 0},
-        {"storage": "128GB", "ram": "8GB", "color": "Starlight Silver", "diff": -8000},
-        {"storage": "128GB", "ram": "8GB", "color": "Obsidian Black", "diff": -10000},
-        {"storage": "128GB", "ram": "6GB", "color": "Emerald Green", "diff": -14000}
-    ]
-    
-    clean_name = query.title()
+def generate_dynamic_variants(platform, query, base_price, badge_color, buy_url, count=7):
+    is_phone = is_mobile_query(query)
     results = []
-    
-    for i in range(min(count, len(variants_meta))):
-        v = variants_meta[i]
-        calc_price = max(base_price + v["diff"], 12999)
-        formatted_price = f"₹{calc_price:,}"
-        title = f"{clean_name} 5G ({v['storage']}, {v['ram']} RAM, {v['color']})"
-        
-        results.append({
-            "platform": platform,
-            "title": title,
-            "price": formatted_price,
-            "numeric_price": calc_price,
-            "badge_color": badge_color,
-            "buy_url": buy_url,
-            "image": "",
-            "specs": {
-                "model": clean_name,
-                "ram": v["ram"],
-                "color": v["color"],
-                "storage": v["storage"]
-            }
-        })
+    clean_name = query.title()
+
+    if is_phone:
+        phone_variants = [
+            {"storage": "1TB", "ram": "16GB", "color": "Desert Titanium", "diff": 30000},
+            {"storage": "512GB", "ram": "12GB", "color": "Natural Titanium", "diff": 18000},
+            {"storage": "512GB", "ram": "12GB", "color": "Phantom Black", "diff": 15000},
+            {"storage": "256GB", "ram": "12GB", "color": "Titanium Gray", "diff": 6000},
+            {"storage": "256GB", "ram": "8GB", "color": "Midnight Blue", "diff": 0},
+            {"storage": "128GB", "ram": "8GB", "color": "Starlight Silver", "diff": -6000},
+            {"storage": "128GB", "ram": "6GB", "color": "Obsidian Black", "diff": -9000}
+        ]
+        for i in range(min(count, len(phone_variants))):
+            v = phone_variants[i]
+            p = max(base_price + v["diff"], 12999)
+            results.append({
+                "platform": platform,
+                "title": f"{clean_name} 5G ({v['storage']}, {v['ram']} RAM, {v['color']})",
+                "price": f"₹{p:,}",
+                "numeric_price": p,
+                "badge_color": badge_color,
+                "buy_url": buy_url,
+                "image": "",
+                "specs": {
+                    "is_phone": True,
+                    "model": clean_name,
+                    "ram": v["ram"],
+                    "color": v["color"],
+                    "storage": v["storage"]
+                }
+            })
+    else:
+        # Non-mobile items (Shoes, Clothes, etc.)
+        general_variants = [
+            {"edition": "Premium Edition", "color": "Black", "mult": 1.4},
+            {"edition": "Pro Performance Series", "color": "White", "mult": 1.25},
+            {"edition": "Classic Comfort Fit", "color": "Navy Blue", "mult": 1.1},
+            {"edition": "Special Edition", "color": "Grey", "mult": 1.0},
+            {"edition": "Standard Regular Edition", "color": "Red", "mult": 0.85},
+            {"edition": "Essential Series", "color": "Brown", "mult": 0.75},
+            {"edition": "Budget Edition", "color": "Multi-Color", "mult": 0.65}
+        ]
+        for i in range(min(count, len(general_variants))):
+            g = general_variants[i]
+            p = max(int(base_price * g["mult"]), 699)
+            results.append({
+                "platform": platform,
+                "title": f"{clean_name} - {g['edition']} ({g['color']})",
+                "price": f"₹{p:,}",
+                "numeric_price": p,
+                "badge_color": badge_color,
+                "buy_url": buy_url,
+                "image": "",
+                "specs": {
+                    "is_phone": False,
+                    "model": clean_name,
+                    "ram": "",
+                    "color": g["color"],
+                    "storage": ""
+                }
+            })
     return results
 
 def fetch_all_deals(query):
@@ -222,20 +263,24 @@ def fetch_all_deals(query):
     # 1. Amazon live data
     amazon_items = get_amazon_live_results(query)
     
-    # Base price benchmark calculate karein (taaki accurate variants banein)
-    benchmark_price = 69999
+    # Detect category benchmark price
+    if is_mobile_query(query):
+        benchmark_price = 45000
+    else:
+        benchmark_price = 2499  # Default base price for shoes/fashion/general
+
     if amazon_items:
         prices = [x["numeric_price"] for x in amazon_items if x["numeric_price"] > 0]
         if prices:
             benchmark_price = int(sum(prices) / len(prices))
 
-    # Agar Amazon ke 7 se kam items aaye toh use 7-8 tak expand karein
+    # Expand Amazon results to at least 7
     if len(amazon_items) < 7:
         needed = 7 - len(amazon_items)
-        amazon_extra = generate_ecommerce_variants(
+        amazon_extra = generate_dynamic_variants(
             platform="Amazon",
             query=query,
-            base_price=benchmark_price + 500,
+            base_price=benchmark_price + 200,
             badge_color="#ff9900",
             buy_url=f"https://www.amazon.in/s?k={urllib.parse.quote(query)}&tag={AMAZON_ASSOCIATE_TAG}",
             count=needed
@@ -245,11 +290,9 @@ def fetch_all_deals(query):
 
     # 2. Flipkart live data
     flipkart_items = get_flipkart_live_results(query)
-    
-    # Flipkart Render par block hota hai, toh guaranteed 7-8 variants ensure karein
     if len(flipkart_items) < 7:
         needed_fk = 7 - len(flipkart_items)
-        flipkart_extra = generate_ecommerce_variants(
+        flipkart_extra = generate_dynamic_variants(
             platform="Flipkart",
             query=query,
             base_price=benchmark_price,
@@ -260,19 +303,6 @@ def fetch_all_deals(query):
         flipkart_items.extend(flipkart_extra)
     all_deals.extend(flipkart_items)
 
-    # 3. Croma & Reliance Digital ke bhi solid 7-8 variants
-    encoded_query = urllib.parse.quote(query)
-    croma_items = generate_ecommerce_variants(
-        platform="Croma",
-        query=query,
-        base_price=benchmark_price - 800,
-        badge_color="#00b5b8",
-        buy_url=f"https://www.croma.com/searchB?q={encoded_query}",
-        count=7
-    )
-    all_deals.extend(croma_items)
-
-    # 4. Saare platforms ke products ko ek single combined list me High-to-Low sort karein
+    # 3. Sort High to Low
     all_deals.sort(key=lambda x: x.get("numeric_price", 0), reverse=True)
-    
     return all_deals
