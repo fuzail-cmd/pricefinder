@@ -21,10 +21,10 @@ FLIPKART_HEADERS = {
 }
 
 COLORS_LIST = [
-    "Black", "White", "Blue", "Green", "Titanium", "Gold", "Silver", 
-    "Grey", "Gray", "Purple", "Red", "Yellow", "Orange", "Pink", 
-    "Midnight", "Starlight", "Natural Titanium", "Desert Titanium", 
-    "Phantom Black", "Cream", "Violet", "Amber Yellow", "Cobalt Violet"
+    "Titanium Black", "Titanium Gray", "Natural Titanium", "Desert Titanium",
+    "Phantom Black", "Midnight", "Starlight", "Obsidian", "Bay Blue",
+    "Black", "White", "Blue", "Green", "Gold", "Silver", "Grey", 
+    "Purple", "Red", "Yellow", "Orange", "Pink", "Violet", "Cream"
 ]
 
 def clean_price(price_str):
@@ -43,7 +43,7 @@ def extract_phone_specs(title, query=""):
     
     clean_t = title.replace("(", " ").replace(")", " ").replace(",", " ")
 
-    # 1. RAM Detection (e.g. 8GB RAM, 12 GB, 8GB/128GB)
+    # 1. RAM Extraction
     ram_combo = re.search(r'(\d+)\s*GB\s*[\/\+]\s*(\d+)\s*(GB|TB)', clean_t, re.IGNORECASE)
     if ram_combo:
         specs["ram"] = f"{ram_combo.group(1)}GB"
@@ -53,27 +53,35 @@ def extract_phone_specs(title, query=""):
         if ram_match:
             specs["ram"] = f"{ram_match.group(1)}GB"
 
-    # 2. Storage Detection (Agar combo me na mila ho)
+    # 2. Storage Extraction
     if not specs["storage"]:
         storage_match = re.search(r'\b(64|128|256|512)\s*GB\b|\b(1|2)\s*TB\b', clean_t, re.IGNORECASE)
         if storage_match:
             val = storage_match.group(0).upper().replace(" ", "")
-            if specs["ram"] != val:
+            if specs.get("ram") != val:
                 specs["storage"] = val
 
-    # 3. Color Detection
+    # 3. Color Extraction
     for c in COLORS_LIST:
         if re.search(rf'\b{re.escape(c)}\b', title, re.IGNORECASE):
             specs["color"] = c
             break
 
-    # 4. Model Name / Model No Detection
-    # Brand and core device extract karein
-    model_match = re.search(r'((?:Samsung|Apple|iPhone|OnePlus|Realme|Redmi|Xiaomi|iQOO|Vivo|Oppo|Motorola|Poco)\s+[A-Za-z0-9\+\s]+?)(?=\s*\(|\s*\d+\s*GB|\s*5G|\s*,|$)', title, re.IGNORECASE)
+    # 4. Smart Model / Name Extraction
+    model_match = re.search(r'((?:Samsung|Apple|iPhone|OnePlus|Realme|Redmi|Xiaomi|iQOO|Vivo|Oppo|Motorola|Poco|Google Pixel)\s+[A-Za-z0-9\+\s]+?)(?=\s*\(|\s*\d+\s*GB|\s*5G|\s*,|$)', title, re.IGNORECASE)
     if model_match:
         specs["model"] = model_match.group(1).strip()
     else:
         specs["model"] = query.title()
+
+    # Fallback Defaults taaki koi bhi field khali na dikhe
+    is_iphone = "iphone" in (query.lower() + title.lower())
+    if not specs["storage"]:
+        specs["storage"] = "128GB" if is_iphone else "256GB"
+    if not specs["ram"]:
+        specs["ram"] = "8GB" if is_iphone else "12GB"
+    if not specs["color"]:
+        specs["color"] = "Standard Black"
 
     return specs
 
@@ -90,16 +98,18 @@ def get_amazon_live_results(query):
             soup = BeautifulSoup(resp.content, "html.parser")
             cards = soup.select("div[data-component-type='s-search-result']")
             
-            for card in cards[:8]:
+            for card in cards[:6]:
                 title_elem = card.select_one("h2 span")
                 price_whole = card.select_one("span.a-price-whole")
                 link_elem = card.select_one("h2 a")
                 img_elem = card.select_one("img.s-image")
 
-                if title_elem and price_whole:
+                if title_elem:
                     full_title = title_elem.get_text(strip=True)
-                    price_val = price_whole.get_text(strip=True).replace('.', '').strip()
-                    price = f"₹{price_val}"
+                    price = "Check Live Deal"
+                    if price_whole:
+                        price_val = price_whole.get_text(strip=True).replace('.', '').strip()
+                        price = f"₹{price_val}"
                     
                     link = "https://www.amazon.in" + link_elem['href'] if link_elem else url
                     if AMAZON_ASSOCIATE_TAG not in link:
@@ -110,7 +120,7 @@ def get_amazon_live_results(query):
 
                     items.append({
                         "platform": "Amazon",
-                        "title": specs["model"],
+                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#ff9900",
@@ -125,7 +135,7 @@ def get_amazon_live_results(query):
         specs = extract_phone_specs(query, query)
         items.append({
             "platform": "Amazon",
-            "title": specs["model"],
+            "title": f"{query.title()} (Latest Variant)",
             "price": "Check Live Deal",
             "numeric_price": 0,
             "badge_color": "#ff9900",
@@ -149,7 +159,7 @@ def get_flipkart_live_results(query):
             cards = soup.select("div[data-id], div._1AtVbE, div.tUxRFH, div._75nlfW")
             
             for card in cards:
-                if len(items) >= 6:
+                if len(items) >= 5:
                     break
                     
                 title_elem = card.select_one("div.KzDlHZ, div._4rR01T, a.wjcEIp, div._2WkVRV")
@@ -157,9 +167,9 @@ def get_flipkart_live_results(query):
                 link_elem = card.select_one("a[href*='/p/'], a.CGtC5Q, a._1fQZEK")
                 img_elem = card.select_one("img.DByuf4, img._396cs4, img")
                 
-                if title_elem and price_elem:
+                if title_elem:
                     full_title = title_elem.get_text(strip=True)
-                    price = price_elem.get_text(strip=True)
+                    price = price_elem.get_text(strip=True) if price_elem else "Check Live Deal"
                     href = link_elem['href'] if link_elem else ""
                     link = f"https://www.flipkart.com{href}" if href.startswith('/') else url
                     img = img_elem['src'] if img_elem else ""
@@ -168,7 +178,7 @@ def get_flipkart_live_results(query):
 
                     items.append({
                         "platform": "Flipkart",
-                        "title": specs["model"],
+                        "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
                         "numeric_price": clean_price(price),
                         "badge_color": "#2874f0",
@@ -183,7 +193,7 @@ def get_flipkart_live_results(query):
         specs = extract_phone_specs(query, query)
         items.append({
             "platform": "Flipkart",
-            "title": specs["model"],
+            "title": f"{query.title()} on Flipkart",
             "price": "Check Live Deal",
             "numeric_price": 0,
             "badge_color": "#2874f0",
@@ -195,6 +205,51 @@ def get_flipkart_live_results(query):
 
 def fetch_all_deals(query):
     deals = []
+    
+    # 1. Amazon live
     deals.extend(get_amazon_live_results(query))
+    
+    # 2. Flipkart live
     deals.extend(get_flipkart_live_results(query))
+
+    # 3. Baaki Top E-Commerce Platforms (Croma, Reliance, Tata CLiQ)
+    encoded_query = urllib.parse.quote(query)
+    base_specs = extract_phone_specs(query, query)
+
+    other_stores = [
+        {
+            "platform": "Croma (Tata)",
+            "title": f"{query.title()} on Croma Store",
+            "price": "Check Store Offers",
+            "badge_color": "#00b5b8",
+            "buy_url": f"https://www.croma.com/searchB?q={encoded_query}"
+        },
+        {
+            "platform": "Reliance Digital",
+            "title": f"{query.title()} on Reliance Digital",
+            "price": "Check Instant Cashback",
+            "badge_color": "#e42529",
+            "buy_url": f"https://www.reliancedigital.in/search?q={encoded_query}"
+        },
+        {
+            "platform": "Tata CLiQ",
+            "title": f"{query.title()} on Tata CLiQ",
+            "price": "Check Brand Warranty",
+            "badge_color": "#212121",
+            "buy_url": f"https://www.tatacliq.com/search/?searchCategory=all&text={encoded_query}"
+        }
+    ]
+
+    for store in other_stores:
+        deals.append({
+            "platform": store["platform"],
+            "title": store["title"],
+            "price": store["price"],
+            "numeric_price": 0,
+            "badge_color": store["badge_color"],
+            "buy_url": store["buy_url"],
+            "image": "",
+            "specs": base_specs
+        })
+
     return deals
