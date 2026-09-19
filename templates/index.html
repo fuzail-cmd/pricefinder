@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceFinder - All India E-Commerce Price Aggregator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: #f1f5f9; color: #0f172a; padding-bottom: 40px; }
+        
+        .navbar { background: linear-gradient(135deg, #1e3a8a, #2563eb); color: white; padding: 22px 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .navbar h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+        .navbar p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+        .container { max-width: 700px; margin: -15px auto 0 auto; padding: 0 16px; }
+
+        .search-container { background: white; padding: 18px; border-radius: 14px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        .search-box { display: flex; gap: 8px; }
+        .search-box input { flex: 1; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; outline: none; transition: 0.2s; }
+        .search-box input:focus { border-color: #2563eb; }
+        .search-box button { padding: 14px 24px; background: #2563eb; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 15px; cursor: pointer; }
+        
+        .categories { display: flex; gap: 8px; overflow-x: auto; margin-top: 14px; padding-bottom: 4px; }
+        .categories a { background: #eff6ff; color: #1d4ed8; text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 20px; white-space: nowrap; border: 1px solid #bfdbfe; }
+
+        .results-header { margin: 25px 0 12px 0; font-size: 16px; color: #475569; font-weight: 600; }
+
+        /* Store List Cards */
+        .deal-card { background: white; border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; border-left: 6px solid #cbd5e1; transition: transform 0.15s ease; }
+        .deal-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+        .store-badge { font-size: 11px; font-weight: 700; color: white; padding: 4px 10px; border-radius: 5px; display: inline-block; margin-bottom: 6px; text-transform: uppercase; }
+        .item-title { font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+        .item-offer { font-size: 13px; font-weight: 600; color: #059669; }
+
+        .buy-btn { background: #0f172a; color: white; text-decoration: none; padding: 11px 18px; border-radius: 8px; font-weight: 700; font-size: 13px; display: inline-block; white-space: nowrap; }
+        .buy-btn:hover { background: #2563eb; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: #64748b; background: white; border-radius: 14px; margin-top: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+        .empty-state span { font-size: 45px; display: block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <h1>🔍 PriceFinder India</h1>
+        <p>Amazon, Flipkart, Croma, Reliance Digital, Ajio, Myntra, Tata CLiQ</p>
+    </div>
+
+    <div class="container">
+        <div class="search-container">
+            <form class="search-box" method="GET" action="/">
+                <input type="text" name="q" placeholder="Koi bhi product search karein (e.g. iPhone 15, Shoes, AC)..." value="{{ query }}" required>
+                <button type="submit">Compare</button>
+            </form>
+
+            <div class="categories">
+                <a href="/?q=iPhone 15">📱 iPhone 15</a>
+                <a href="/?q=Samsung S24">📱 Samsung S24</a>
+                <a href="/?q=Smart Watch">⌚ Smart Watch</a>
+                <a href="/?q=Running Shoes">👟 Running Shoes</a>
+                <a href="/?q=Split AC">❄️ Air Conditioner</a>
+                <a href="/?q=Laptops">💻 Laptops</a>
+            </div>
+        </div>
+
+        {% if query %}
+            <div class="results-header">Showing comparison across 7 Stores for: <b>"{{ query }}"</b></div>
+            
+            {% for item in deals %}
+            <div class="deal-card" style="border-left-color: {{ item.badge_color }}">
+                <div>
+                    <span class="store-badge" style="background: {{ item.badge_color }}">{{ item.platform }}</span>
+                    <div class="item-title">{{ item.title }}</div>
+                    <div class="item-offer">⚡ {{ item.price }}</div>
+                </div>
+                <div>
+                    <a href="{{ item.buy_url }}" target="_blank" class="buy-btn">View Store ➔</a>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <span>🛍️</span>
+                <h3>Ek Click me Sabhi Stores Compare Karein</h3>
+                <p style="margin-top: 6px; font-size: 14px;">Product ka naam search karein ya upar quick tags par click karein.</p>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>
