@@ -23,7 +23,7 @@ def fetch_all_deals(query):
             "price": "Check Best Deal",
             "numeric_price": 100,
             "badge_color": "#ff9900",
-            "buy_url": f"https://www.amazon.in/s?k={encoded_query}&tag={AMAZON_TAG}"
+            "buy_url": f"https://www.amazon.in/s?k={encoded_query}&tag={AMAZON_ASSOCIATE_TAG}"
         },
         {
             "platform": "Flipkart",
