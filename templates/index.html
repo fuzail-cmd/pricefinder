@@ -25,7 +25,8 @@
         .categories { display: flex; gap: 8px; overflow-x: auto; margin-top: 14px; padding-bottom: 4px; }
         .categories a { background: #eff6ff; color: #1d4ed8; text-decoration: none; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 20px; white-space: nowrap; border: 1px solid #bfdbfe; }
 
-        .results-header { margin: 25px 0 12px 0; font-size: 16px; color: #475569; font-weight: 600; }
+        .results-header { margin: 25px 0 14px 0; font-size: 15px; color: #475569; font-weight: 600; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .sort-badge { font-size: 12px; background: #e0f2fe; color: #0369a1; padding: 4px 10px; border-radius: 6px; font-weight: 700; border: 1px solid #bae6fd; }
 
         /* Card Layout */
         .deal-card { 
@@ -49,7 +50,7 @@
         .store-badge { font-size: 11px; font-weight: 800; color: white; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px; text-transform: uppercase; }
         .item-title { font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.35; margin-bottom: 6px; }
 
-        /* Specs Tags */
+        /* Specs Grid */
         .specs-grid { display: flex; flex-wrap: wrap; gap: 6px; }
         .spec-pill { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
         .spec-pill.model { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
@@ -91,7 +92,10 @@
         </div>
 
         {% if query %}
-            <div class="results-header">Showing comparison for: <b>"{{ query }}"</b></div>
+            <div class="results-header">
+                <span>Showing comparison for: <b>"{{ query }}"</b></span>
+                <span class="sort-badge">🔻 Price: High to Low</span>
+            </div>
             
             {% for item in deals %}
             <div class="deal-card" style="border-left-color: {{ item.badge_color }}">
