@@ -3,8 +3,11 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+# Amazon direct Associate Tag
 AMAZON_ASSOCIATE_TAG = "pricedekho085-21"
-FLIPKART_AFF_ID = "youraffid"
+
+# EarnKaro Base Shortener Link
+EARNKARO_FLIPKART_LINK = "https://fktr.in/BFCBBQ4"
 
 AMAZON_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
@@ -74,14 +77,14 @@ def extract_phone_specs(title, query=""):
     else:
         specs["model"] = query.title()
 
-    # Defaults
+    # Smart fallbacks
     is_iphone = "iphone" in (query.lower() + title.lower())
     if not specs["storage"]:
         specs["storage"] = "128GB" if is_iphone else "256GB"
     if not specs["ram"]:
         specs["ram"] = "8GB" if is_iphone else "12GB"
     if not specs["color"]:
-        specs["color"] = "Standard Black"
+        specs["color"] = "Standard Edition"
 
     return specs
 
@@ -137,12 +140,12 @@ def get_amazon_live_results(query):
 
 def get_flipkart_live_results(query):
     encoded_query = urllib.parse.quote(query)
-    url = f"https://www.flipkart.com/search?q={encoded_query}&affid={FLIPKART_AFF_ID}"
+    search_url = f"https://www.flipkart.com/search?q={encoded_query}"
     items = []
     
     try:
         session = requests.Session()
-        resp = session.get(url, headers=FLIPKART_HEADERS, timeout=8)
+        resp = session.get(search_url, headers=FLIPKART_HEADERS, timeout=8)
         
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.content, "html.parser")
@@ -161,43 +164,55 @@ def get_flipkart_live_results(query):
                     full_title = title_elem.get_text(strip=True)
                     price = price_elem.get_text(strip=True) if price_elem else "Check Live Deal"
                     num_p = clean_price(price) if price_elem else 0
-                    
-                    href = link_elem['href'] if link_elem else ""
-                    link = f"https://www.flipkart.com{href}" if href.startswith('/') else url
                     img = img_elem['src'] if img_elem else ""
                     
                     specs = extract_phone_specs(full_title, query)
 
+                    # EarnKaro link lagaya gaya hai
                     items.append({
                         "platform": "Flipkart",
                         "title": full_title[:75] + ("..." if len(full_title) > 75 else ""),
                         "price": price,
                         "numeric_price": num_p,
                         "badge_color": "#2874f0",
-                        "buy_url": link,
+                        "buy_url": EARNKARO_FLIPKART_LINK,
                         "image": img,
                         "specs": specs
                     })
     except Exception as err:
         print(f"Flipkart error: {err}")
 
+    if not items:
+        specs = extract_phone_specs(query, query)
+        items.append({
+            "platform": "Flipkart",
+            "title": f"{query.title()} on Flipkart",
+            "price": "Check Live Deal",
+            "numeric_price": 0,
+            "badge_color": "#2874f0",
+            "buy_url": EARNKARO_FLIPKART_LINK,
+            "image": "",
+            "specs": specs
+        })
+
     return items
 
 def fetch_all_deals(query):
     live_deals = []
     
-    # 1. Amazon aur Flipkart se data layein
+    # 1. Amazon live results (Direct Associates tag)
     live_deals.extend(get_amazon_live_results(query))
+    
+    # 2. Flipkart live results (EarnKaro monetization)
     live_deals.extend(get_flipkart_live_results(query))
 
-    # 2. Sorting: Jinka price available hai unhe Sabse Mehanga (High) se Sabse Sasta (Low) sort karein
+    # 3. High-to-low price sorting
     priced_items = [d for d in live_deals if d.get("numeric_price", 0) > 0]
     priced_items.sort(key=lambda x: x["numeric_price"], reverse=True)
 
-    # 3. Jinka exact price scrape nahi hua unhe alag rakhein
     unpriced_items = [d for d in live_deals if d.get("numeric_price", 0) == 0]
 
-    # 4. Other stores (Croma, Reliance, Tata CLiQ)
+    # 4. Secondary Stores
     encoded_query = urllib.parse.quote(query)
     base_specs = extract_phone_specs(query, query)
     other_stores = [
@@ -233,6 +248,4 @@ def fetch_all_deals(query):
         }
     ]
 
-    # Final combined list: Sabse pehle sorted mehanga-se-sasta live items, fir baaki stores
-    final_deals = priced_items + unpriced_items + other_stores
-    return final_deals
+    return priced_items + unpriced_items + other_stores
