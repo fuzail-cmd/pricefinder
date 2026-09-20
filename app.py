@@ -7,7 +7,6 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
 
-# Insecure transport enable (OAuth proxy callback ke liye zaroori)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
@@ -22,13 +21,38 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'home'
 
-# User Database Model
+# User Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    profile_pic = db.Column(db.String(500), nullable=True, default="")
     coins = db.Column(db.Integer, default=50)
+    country_code = db.Column(db.String(10), nullable=True, default="+91")
+    phone = db.Column(db.String(20), nullable=True, default="")
+    upi_id = db.Column(db.String(100), nullable=True, default="")
+    bank_account = db.Column(db.String(50), nullable=True, default="")
+    bank_ifsc = db.Column(db.String(30), nullable=True, default="")
+
+    def completion_percentage(self):
+        score = 0
+        # 1. Profile Picture
+        if self.profile_pic and "flaticon" not in self.profile_pic:
+            score += 20
+        # 2. Full Name
+        if self.name and len(self.name.strip()) > 2:
+            score += 20
+        # 3. Mobile Number (10 digits)
+        if self.phone and len(self.phone.strip()) >= 10:
+            score += 20
+        # 4. UPI ID
+        if self.upi_id and "@" in self.upi_id:
+            score += 20
+        # 5. Bank Details
+        if self.bank_account and self.bank_ifsc:
+            score += 20
+        return score
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -44,7 +68,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# Smart Search & Catalog Engine
+# Product Fallback Catalog
 CATALOG = [
     {
         "keywords": ["iphone 15", "iphone15", "apple iphone 15"],
@@ -144,6 +168,31 @@ def home():
                 db.session.commit()
     return render_template('index.html', deals=deals, query=query)
 
+# Profile Update Route (Save 5 Fields)
+@app.route('/profile/update', methods=['POST'])
+@login_required
+def update_profile():
+    name = request.form.get('name', '').strip()
+    profile_pic = request.form.get('profile_pic', '').strip()
+    country_code = request.form.get('country_code', '+91').strip()
+    phone = request.form.get('phone', '').strip()
+    upi_id = request.form.get('upi_id', '').strip()
+    bank_account = request.form.get('bank_account', '').strip()
+    bank_ifsc = request.form.get('bank_ifsc', '').strip()
+
+    if name:
+        current_user.name = name
+    if profile_pic:
+        current_user.profile_pic = profile_pic
+    current_user.country_code = country_code
+    current_user.phone = phone
+    current_user.upi_id = upi_id
+    current_user.bank_account = bank_account
+    current_user.bank_ifsc = bank_ifsc
+
+    db.session.commit()
+    return redirect(url_for('home'))
+
 @app.route('/login')
 def login_page():
     if current_user.is_authenticated:
@@ -165,6 +214,7 @@ def google_authorize():
         
         email = user_info.get('email')
         name = user_info.get('name', 'User')
+        picture = user_info.get('picture', 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png')
 
         user = User.query.filter_by(email=email).first()
         if not user:
@@ -172,13 +222,17 @@ def google_authorize():
                 name=name,
                 email=email,
                 password="GOOGLE_AUTH_SECURE",
+                profile_pic=picture,
                 coins=50
             )
             db.session.add(user)
             db.session.commit()
+        else:
+            if not user.profile_pic or "flaticon" in user.profile_pic:
+                user.profile_pic = picture
+                db.session.commit()
 
         login_user(user)
-        print(f"--> [USER LOGGED IN] Name: {user.name} | Email: {user.email} | Coins: {user.coins}")
         return redirect(url_for('home'))
     except Exception as e:
         print("OAuth Error:", e)
@@ -190,7 +244,7 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-# Secret Admin Dashboard Route
+# Admin Dashboard
 @app.route('/admin/users')
 def view_users():
     secret_key = request.args.get('key')
@@ -210,29 +264,46 @@ def view_users():
             h2 {{ margin-bottom: 8px; }}
             .badge {{ background: #2563eb; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 16px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-            th, td {{ padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }}
+            th, td {{ padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }}
             th {{ background: #f1f5f9; font-weight: 700; }}
             tr:hover {{ background: #f8fafc; }}
+            .avatar {{ width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; }}
         </style>
     </head>
     <body>
         <h2>Registered Users <span class="badge">Total: {total}</span></h2>
         <table>
             <tr>
-                <th>ID</th>
+                <th>Photo</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Mobile Number</th>
+                <th>UPI ID</th>
+                <th>Bank A/C & IFSC</th>
+                <th>Profile Status</th>
                 <th>Coins</th>
             </tr>
     """
 
     for u in users:
+        pic = u.profile_pic if u.profile_pic else "https://cdn-icons-png.flaticon.com/512/3177/3177440.png"
+        code = u.country_code or "+91"
+        phone_txt = f"{code} {u.phone}" if u.phone else "<span style='color:#94a3b8;'>Not added</span>"
+        upi_disp = u.upi_id if u.upi_id else "<span style='color:#94a3b8;'>Not added</span>"
+        bank_disp = f"{u.bank_account} ({u.bank_ifsc})" if (u.bank_account or u.bank_ifsc) else "<span style='color:#94a3b8;'>Not added</span>"
+        perc = u.completion_percentage()
+        status_tag = f"<span style='color:#16a34a;font-weight:700;'>✔ Completed</span>" if perc == 100 else f"<span style='color:#ea580c;font-weight:700;'>{perc}% Filled</span>"
+
         html += f"""
             <tr>
-                <td>{u.id}</td>
-                <td>{u.name}</td>
+                <td><img src="{pic}" class="avatar" alt="Avatar"></td>
+                <td><strong>{u.name}</strong></td>
                 <td>{u.email}</td>
-                <td>🪙 {u.coins}</td>
+                <td><strong>{phone_txt}</strong></td>
+                <td><code>{upi_disp}</code></td>
+                <td>{bank_disp}</td>
+                <td>{status_tag}</td>
+                <td>🪙 <strong>{u.coins}</strong></td>
             </tr>
         """
 
