@@ -7,7 +7,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.middleware.proxy_fix import ProxyFix
 from authlib.integrations.flask_client import OAuth
 
-# Insecure transport enable (OAuth proxy callback error fix)
+# Insecure transport enable (OAuth proxy callback ke liye zaroori)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
@@ -22,6 +22,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'home'
 
+# User Database Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -43,7 +44,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# Smart Search & Fallback Engine
+# Smart Search & Catalog Engine
 CATALOG = [
     {
         "keywords": ["iphone 15", "iphone15", "apple iphone 15"],
@@ -177,6 +178,8 @@ def google_authorize():
             db.session.commit()
 
         login_user(user)
+        # Terminal/Logs me print hoga
+        print(f"--> [USER LOGGED IN] Name: {user.name} | Email: {user.email} | Coins: {user.coins}")
         return redirect(url_for('home'))
     except Exception as e:
         print("OAuth Error:", e)
