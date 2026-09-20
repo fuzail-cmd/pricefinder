@@ -14,10 +14,9 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_production_secret_2026")
 
-# Database Setup: Permanent PostgreSQL on Render (Zero Data Loss), SQLite for local fallback
+# Database Setup: Permanent PostgreSQL on Render, SQLite fallback
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
-    # Render postgres:// compatibility fix for SQLAlchemy 1.4+
     if database_url.startswith("postgres://"):
         database_url = database_url.replace("postgres://", "postgresql://", 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
@@ -39,7 +38,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False, default="SECURE_OAUTH_PASS")
     profile_pic = db.Column(db.String(500), nullable=True, default="")
-    coins = db.Column(db.Integer, default=50)
+    coins = db.Column(db.Integer, default=100) # 100 Coins = ₹1 Welcome Bonus
     country_code = db.Column(db.String(10), nullable=True, default="+91")
     phone = db.Column(db.String(20), nullable=True, default="")
     upi_id = db.Column(db.String(100), nullable=True, default="")
@@ -71,13 +70,13 @@ class Transaction(db.Model):
     coins = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Payout Request Model
+# Payout Request Model (₹50 = 5,000 Coins)
 class PayoutRequest(db.Model):
     __tablename__ = 'payout_request'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     amount_inr = db.Column(db.Integer, default=50)
-    coins_deducted = db.Column(db.Integer, default=500)
+    coins_deducted = db.Column(db.Integer, default=5000)
     payment_method = db.Column(db.String(100), nullable=False)
     status = db.Column(db.String(20), default="Pending")
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
@@ -209,8 +208,8 @@ def home():
             deals = search_products(query)
             if current_user.is_authenticated:
                 try:
-                    current_user.coins += 5
-                    tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=5)
+                    current_user.coins += 2 # Search Reward: 2 Coins
+                    tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=2)
                     db.session.add(tx)
                     db.session.commit()
                     history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
@@ -219,7 +218,7 @@ def home():
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
-# 1. API: Load Ad & Start 15-Second Session
+# 1. API: Load Ad (15 Seconds)
 @app.route('/api/load-ad', methods=['GET'])
 @login_required
 def load_ad():
@@ -230,7 +229,7 @@ def load_ad():
         "duration": 15
     })
 
-# 2. API: Claim Reward (Strict 15-Second Anti-Cheat Verification)
+# 2. API: Claim Reward (Profitable Model: +4 Coins per 15s View)
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
@@ -243,12 +242,12 @@ def claim_ad_reward():
         return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins lene ke liye pure 15 seconds wait karein."}), 400
 
     try:
-        current_user.coins += 10
-        tx = Transaction(user_id=current_user.id, title="Watched Adsterra Sponsor Ad (15s)", coins=10)
+        current_user.coins += 4 # User ko 4 Coins (₹0.04), Aapko milenge ₹0.08–₹0.15
+        tx = Transaction(user_id=current_user.id, title="Watched Adsterra Sponsor Ad (15s)", coins=4)
         db.session.add(tx)
         db.session.commit()
         session.pop('ad_start_time', None)
-        return jsonify({"success": True, "coins": current_user.coins, "reward": 10})
+        return jsonify({"success": True, "coins": current_user.coins, "reward": 4})
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
@@ -260,7 +259,7 @@ def complete_task():
     try:
         data = request.get_json() or {}
         task_name = data.get('task_name', 'Task Bonus')
-        reward_coins = int(data.get('reward', 25))
+        reward_coins = int(data.get('reward', 100))
 
         current_user.coins += reward_coins
         tx = Transaction(user_id=current_user.id, title=f"Completed Task: {task_name}", coins=reward_coins)
@@ -271,7 +270,7 @@ def complete_task():
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Request Payout (₹50 Minimum Rule: 500 Coins = ₹50)
+# API: Request Payout (₹50 = 5,000 Coins)
 @app.route('/api/request-payout', methods=['POST'])
 @login_required
 def request_payout():
@@ -280,17 +279,17 @@ def request_payout():
         if existing:
             return jsonify({"success": False, "message": "Aapki pichli ₹50 payout request already Pending/Processing me hai!"}), 400
 
-        if current_user.coins < 500:
-            remaining = 500 - current_user.coins
-            return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 500 coins chahiye. Aapko aur {remaining} coins earn karne honge!"}), 400
+        if current_user.coins < 5000:
+            remaining = 5000 - current_user.coins
+            return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 5,000 coins chahiye. Aapko aur {remaining} coins earn karne honge!"}), 400
 
         p_method = current_user.upi_id if current_user.upi_id else f"{current_user.bank_account} ({current_user.bank_ifsc})"
         if not current_user.upi_id and not current_user.bank_account:
             return jsonify({"success": False, "message": "Kripya payout lene se pehle apni profile me UPI ID ya Bank details add karein!"}), 400
 
-        current_user.coins -= 500
-        req = PayoutRequest(user_id=current_user.id, amount_inr=50, coins_deducted=500, payment_method=p_method, status="Pending")
-        tx = Transaction(user_id=current_user.id, title="Payout Request Submitted (₹50)", coins=-500)
+        current_user.coins -= 5000
+        req = PayoutRequest(user_id=current_user.id, amount_inr=50, coins_deducted=5000, payment_method=p_method, status="Pending")
+        tx = Transaction(user_id=current_user.id, title="Payout Request Submitted (₹50)", coins=-5000)
         
         db.session.add(req)
         db.session.add(tx)
@@ -362,12 +361,12 @@ def google_authorize():
                 email=email,
                 password="GOOGLE_AUTH_SECURE",
                 profile_pic=picture,
-                coins=50
+                coins=100
             )
             db.session.add(user)
             db.session.commit()
             
-            welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus", coins=50)
+            welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus (100 Coins = ₹1)", coins=100)
             db.session.add(welcome_tx)
             db.session.commit()
         else:
@@ -452,7 +451,7 @@ def view_users():
                 <tr>
                     <td>#{p.id}</td>
                     <td><strong>{p.user.name}</strong> ({p.user.email})</td>
-                    <td><strong>₹{p.amount_inr}</strong> (500 Coins)</td>
+                    <td><strong>₹{p.amount_inr}</strong> (5,000 Coins)</td>
                     <td><code>{p.payment_method}</code></td>
                     <td>{p.timestamp.strftime('%d %b %Y, %I:%M %p')}</td>
                     <td><span class='{st_class}'>{p.status}</span></td>
@@ -495,7 +494,7 @@ def view_users():
                 <td><code>{upi_disp}</code></td>
                 <td>{bank_disp}</td>
                 <td>{status_tag}</td>
-                <td>🪙 <strong>{u.coins}</strong> (≈ ₹{u.coins/10})</td>
+                <td>🪙 <strong>{u.coins}</strong> (≈ ₹{u.coins / 100:.2f})</td>
             </tr>
         """
 
@@ -506,7 +505,7 @@ def view_users():
     """
     return html
 
-# Automatic Table Creation for PostgreSQL / SQLite
+# Automatic Table Creation
 with app.app_context():
     db.create_all()
 
