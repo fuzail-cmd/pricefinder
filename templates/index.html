@@ -179,7 +179,7 @@
       cursor: pointer;
     }
 
-    /* 3 Financial Status Cards */
+    /* Financial Status Cards */
     .wallet-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -502,43 +502,26 @@
       margin-top: 10px;
     }
 
-    /* Genuine Video/Ad Player Modal */
+    /* 15-Second Non-Skip Ad Modal */
     .ad-card {
       background: #ffffff;
       border-radius: 16px;
-      padding: 20px;
+      padding: 24px;
       max-width: 420px;
       width: 100%;
       text-align: center;
       box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-      position: relative;
     }
 
     .ad-timer-badge {
-      background: #ef4444;
+      background: #ea580c;
       color: white;
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 800;
-      padding: 4px 10px;
+      padding: 6px 14px;
       border-radius: 20px;
       display: inline-block;
-      margin-bottom: 12px;
-    }
-
-    .ad-media-box {
-      width: 100%;
-      height: 200px;
-      border-radius: 12px;
-      overflow: hidden;
       margin-bottom: 14px;
-      position: relative;
-      background: #0f172a;
-    }
-
-    .ad-media-box img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
     }
 
     .claim-ad-btn {
@@ -548,10 +531,11 @@
       border: none;
       padding: 12px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 800;
       cursor: pointer;
       display: none;
+      margin-top: 10px;
     }
 
     /* Gateway */
@@ -726,9 +710,9 @@
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
             <h3 class="card-title">Watch Ads & Earn Coins</h3>
-            <p class="card-desc">Watch full 10-second sponsor ad to earn instant 10 coins. (Zero skip allowed).</p>
+            <p class="card-desc">Watch live sponsored ad on Adsterra network for 15 seconds to earn 10 instant coins. (Zero skip allowed).</p>
           </div>
-          <button type="button" class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdFlow()">
+          <button type="button" class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdsterraFlow()">
             ▶ Watch Ad (+10 Coins)
           </button>
         </div>
@@ -796,18 +780,16 @@
 
   </div>
 
-  <!-- Real Sponsor Ad Player Modal -->
+  <!-- Real Adsterra Countdown (15-Second Strict Non-Skip) & Claim Modal -->
   <div id="adPlayerModal" class="modal-overlay">
     <div class="ad-card">
-      <div id="adTimerBadge" class="ad-timer-badge">⏳ Ad Playing: 10s remaining (Do not close)</div>
+      <div id="adTimerBadge" class="ad-timer-badge">⏳ Ad Playing in New Window (15s remaining)...</div>
       
-      <div class="ad-media-box">
-        <img id="adImage" src="" alt="Sponsor Ad">
-      </div>
-
-      <div style="text-align: left; margin-bottom: 16px;">
-        <span id="adSponsorName" style="font-size: 11px; font-weight: 700; color: #2563eb; text-transform: uppercase;"></span>
-        <h4 id="adTitle" style="font-size: 15px; font-weight: 800; margin-top: 4px; color: #0f172a;"></h4>
+      <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
+        <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Sponsored Ad Active</h3>
+        <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
+          Sponsor ad page aapke naye tab me open ho chuki hai. Kripya use band na karein aur pure 15 seconds tak explore karein.
+        </p>
       </div>
 
       <button type="button" id="claimRewardBtn" class="claim-ad-btn" onclick="claimFinishedAdReward()">
@@ -978,37 +960,24 @@
       }
     }
 
-    // Real Ad Player & Anti-Cheat Logic
-    async function startAdFlow() {
+    // Real Adsterra Direct Link Integration (Strict 15 Seconds Non-Skip)
+    async function startAdsterraFlow() {
       const btn = document.getElementById('startAdBtn');
-      btn.innerText = "Checking Ads...";
+      btn.innerText = "Loading Live Ad...";
       btn.disabled = true;
 
       try {
         const res = await fetch('/api/load-ad');
         const data = await res.json();
 
-        // Check if ads available
-        if (!data.available) {
-          alert(data.message);
-          btn.innerText = "⚠️ Ads Not Available";
-          setTimeout(() => {
-            btn.innerText = "▶ Watch Ad (+10 Coins)";
-            btn.disabled = false;
-          }, 3000);
-          return;
-        }
+        // 1. Open live sponsor ad in a new window/tab
+        window.open(data.ad_url, '_blank');
 
-        // Open Ad Player Modal
-        const ad = data.ad;
-        document.getElementById('adImage').src = ad.image;
-        document.getElementById('adSponsorName').innerText = ad.sponsor;
-        document.getElementById('adTitle').innerText = ad.title;
-        
+        // 2. Open countdown modal on current page
         const adModal = document.getElementById('adPlayerModal');
         adModal.style.display = 'flex';
 
-        let seconds = 10;
+        let seconds = 15;
         const timerBadge = document.getElementById('adTimerBadge');
         const claimBtn = document.getElementById('claimRewardBtn');
         claimBtn.style.display = 'none';
@@ -1016,7 +985,7 @@
         const interval = setInterval(() => {
           seconds--;
           if (seconds > 0) {
-            timerBadge.innerText = `⏳ Ad Playing: ${seconds}s remaining (Do not close)`;
+            timerBadge.innerText = `⏳ Ad Playing in New Window (${seconds}s remaining)...`;
           } else {
             clearInterval(interval);
             timerBadge.innerText = "✅ Ad Completed Successfully!";
@@ -1026,12 +995,13 @@
         }, 1000);
 
       } catch (e) {
-        alert("Ad network server error. Try again!");
+        alert("Error loading ad network. Try again!");
         btn.innerText = "▶ Watch Ad (+10 Coins)";
         btn.disabled = false;
       }
     }
 
+    // Claim Verified Ad Coins
     async function claimFinishedAdReward() {
       const claimBtn = document.getElementById('claimRewardBtn');
       claimBtn.innerText = "Verifying & Adding Coins...";
@@ -1041,7 +1011,7 @@
         const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          alert(`🎉 Congratulations! Full Ad completed. You received +${data.reward} Coins!`);
+          alert(`🎉 Congratulations! Full ad completed. You received +${data.reward} Coins!`);
           document.getElementById('adPlayerModal').style.display = 'none';
           window.location.reload();
         } else {
