@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PriceDekho - Price Comparison & Rewards</title>
+  <title>PriceDekho - Compare Prices & Earn Rewards</title>
   <style>
     * {
       box-sizing: border-box;
@@ -12,10 +12,10 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: #f8fafc;
       color: #0f172a;
-      padding-bottom: 40px;
+      padding-bottom: 50px;
     }
 
     /* Navbar */
@@ -26,14 +26,17 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 100%;
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .brand {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 800;
       color: #2563eb;
       text-decoration: none;
+      letter-spacing: -0.5px;
     }
 
     .brand span {
@@ -41,14 +44,14 @@
     }
 
     .nav-links a {
-      margin-left: 14px;
+      margin-left: 12px;
       text-decoration: none;
       font-weight: 600;
       color: #475569;
       font-size: 14px;
     }
 
-    /* Main Container */
+    /* Container */
     .container {
       width: 100%;
       max-width: 1100px;
@@ -57,78 +60,103 @@
     }
 
     /* Search Box */
-    .search-box {
-      margin: 20px auto;
-      max-width: 600px;
-      display: flex;
-      gap: 8px;
+    .search-wrapper {
+      margin: 20px auto 28px auto;
+      max-width: 650px;
     }
 
-    .search-box input {
+    .search-form {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .search-input {
       flex: 1;
-      padding: 14px 16px;
-      font-size: 16px;
+      padding: 13px 16px;
+      font-size: 16px; /* 16px prevent karta hai iOS zoom-in glitch */
       border: 2px solid #cbd5e1;
       border-radius: 10px;
       outline: none;
+      background: #ffffff;
+      color: #0f172a;
+      transition: border-color 0.2s;
     }
 
-    .search-box input:focus {
+    .search-input:focus {
       border-color: #2563eb;
     }
 
-    .search-box button {
-      padding: 14px 24px;
+    .search-btn {
+      padding: 13px 22px;
       background: #2563eb;
       color: #ffffff;
       border: none;
       border-radius: 10px;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 700;
       cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
     }
 
-    /* Grid Layout: Responsive for Mobile & Desktop */
-    .grid {
+    .search-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .query-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #334155;
+    }
+
+    /* Responsive Grid Layout */
+    .deals-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, 1fr); /* Mobile screen par exact 2 columns */
       gap: 12px;
-      margin-top: 20px;
     }
 
     @media (min-width: 768px) {
-      .grid {
-        grid-template-columns: repeat(3, 1fr);
+      .deals-grid {
+        grid-template-columns: repeat(3, 1fr); /* Tablet */
         gap: 20px;
+      }
+      .container {
+        padding: 24px;
       }
     }
 
     @media (min-width: 1024px) {
-      .grid {
-        grid-template-columns: repeat(4, 1fr);
+      .deals-grid {
+        grid-template-columns: repeat(4, 1fr); /* Desktop */
       }
     }
 
-    /* Product Card */
+    /* Card Styling */
     .card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 14px;
+      border-radius: 14px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      position: relative;
     }
 
     .badge {
+      display: inline-block;
       align-self: flex-start;
       padding: 4px 8px;
       font-size: 11px;
-      font-weight: 700;
-      border-radius: 4px;
+      font-weight: 800;
+      border-radius: 6px;
       margin-bottom: 8px;
       text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .badge.amazon {
@@ -141,15 +169,24 @@
       color: #1d4ed8;
     }
 
-    .card img {
+    .card-img-wrap {
       width: 100%;
       height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .card img {
+      max-width: 100%;
+      max-height: 100%;
       object-fit: contain;
-      margin-bottom: 12px;
     }
 
     .card-title {
       font-size: 13px;
+      font-weight: 600;
       line-height: 1.4;
       height: 38px;
       overflow: hidden;
@@ -161,21 +198,29 @@
     }
 
     .card-price {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 800;
-      color: #0f172a;
+      color: #16a34a;
       margin-bottom: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .buy-btn {
       display: block;
       text-align: center;
-      padding: 10px;
+      padding: 10px 8px;
       font-size: 13px;
       font-weight: 700;
       color: #ffffff;
       text-decoration: none;
       border-radius: 8px;
+      transition: opacity 0.2s;
+    }
+
+    .buy-btn:hover {
+      opacity: 0.9;
     }
 
     .buy-btn.amazon {
@@ -185,67 +230,105 @@
 
     .buy-btn.flipkart {
       background: #2563eb;
+      color: #ffffff;
     }
 
-    .empty-state {
+    /* Blank States */
+    .empty-box {
       text-align: center;
-      padding: 40px 20px;
+      padding: 60px 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px dashed #cbd5e1;
       color: #64748b;
+      margin-top: 10px;
+    }
+
+    .empty-box h3 {
+      font-size: 18px;
+      color: #334155;
+      margin-bottom: 6px;
+    }
+
+    .empty-box p {
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
 
-  <nav class="navbar">
+  <!-- Top Navbar -->
+  <header class="navbar">
     <a href="/" class="brand">Price<span>Dekho</span></a>
-    <div class="nav-links">
+    <nav class="nav-links">
       {% if current_user.is_authenticated %}
-        <span>Hi, {{ current_user.name }}</span>
+        <span style="font-size: 14px; font-weight: 600; color: #0f172a;">Hi, {{ current_user.name }}</span>
         <a href="/logout">Logout</a>
       {% else %}
         <a href="/login">Login</a>
         <a href="/signup">Register</a>
       {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- Search Bar -->
+    <div class="search-wrapper">
+      <form action="/" method="GET" class="search-form">
+        <input 
+          type="text" 
+          name="q" 
+          class="search-input" 
+          value="{{ query }}" 
+          placeholder="Search phone, laptop, earbuds..." 
+          required
+        >
+        <button type="submit" class="search-btn">Search</button>
+      </form>
     </div>
-  </nav>
 
-  <div class="container">
-    <form action="/" method="GET" class="search-box">
-      <input type="text" name="q" value="{{ query }}" placeholder="Search mobile, laptop, earphones..." required>
-      <button type="submit">Search</button>
-    </form>
-
+    <!-- Results Section -->
     {% if query %}
-      <h2 style="font-size: 18px; margin-bottom: 16px;">Results for "{{ query }}"</h2>
+      <div class="query-title">Showing results for: <strong>"{{ query }}"</strong></div>
     {% endif %}
 
     {% if deals %}
-      <div class="grid">
+      <div class="deals-grid">
         {% for deal in deals %}
           <div class="card">
             <div>
               <span class="badge {{ deal.store|lower }}">{{ deal.store }}</span>
-              <img src="{{ deal.image }}" alt="{{ deal.title }}">
-              <div class="card-title">{{ deal.title }}</div>
+              <div class="card-img-wrap">
+                <img src="{{ deal.image }}" alt="{{ deal.title }}" loading="lazy">
+              </div>
+              <div class="card-title" title="{{ deal.title }}">{{ deal.title }}</div>
               <div class="card-price">{{ deal.price_raw }}</div>
             </div>
-            <!-- Direct exact product page link -->
-            <a href="{{ deal.affiliate_url }}" target="_blank" rel="noopener noreferrer" class="buy-btn {{ deal.store|lower }}">
+            
+            <!-- Direct Product Deep-link -->
+            <a 
+              href="{{ deal.affiliate_url }}" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              class="buy-btn {{ deal.store|lower }}"
+            >
               Buy on {{ deal.store }}
             </a>
           </div>
         {% endfor %}
       </div>
     {% elif query %}
-      <div class="empty-state">
-        <p>No products found for "{{ query }}". Try searching a simpler model name.</p>
+      <div class="empty-box">
+        <h3>No direct results found</h3>
+        <p>Please try searching with a more general brand or model name.</p>
       </div>
     {% else %}
-      <div class="empty-state">
-        <p>Search any product above to compare prices on Amazon & Flipkart instantly.</p>
+      <div class="empty-box">
+        <h3>Search products to compare</h3>
+        <p>Type any item name above to see live prices across Amazon & Flipkart.</p>
       </div>
     {% endif %}
-  </div>
+  </main>
 
 </body>
 </html>
