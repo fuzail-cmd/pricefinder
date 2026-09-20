@@ -5,3 +5,4 @@ werkzeug
 gunicorn
 authlib
 requests
+beautifulsoup4
