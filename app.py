@@ -1,7 +1,7 @@
 import os
 import requests
-from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for
+from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -37,22 +37,25 @@ class User(UserMixin, db.Model):
 
     def completion_percentage(self):
         score = 0
-        # 1. Profile Picture
         if self.profile_pic and "flaticon" not in self.profile_pic:
             score += 20
-        # 2. Full Name
         if self.name and len(self.name.strip()) > 2:
             score += 20
-        # 3. Mobile Number (10 digits)
         if self.phone and len(self.phone.strip()) >= 10:
             score += 20
-        # 4. UPI ID
         if self.upi_id and "@" in self.upi_id:
             score += 20
-        # 5. Bank Details
         if self.bank_account and self.bank_ifsc:
             score += 20
         return score
+
+# Earning History / Statement Model
+class Transaction(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    coins = db.Column(db.Integer, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -68,7 +71,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# Product Fallback Catalog
+# Products Catalog
 CATALOG = [
     {
         "keywords": ["iphone 15", "iphone15", "apple iphone 15"],
@@ -159,16 +162,49 @@ def search_products(query):
 def home():
     deals = []
     query = ""
+    history = []
+
+    if current_user.is_authenticated:
+        history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(10).all()
+
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         if query:
             deals = search_products(query)
             if current_user.is_authenticated:
                 current_user.coins += 5
+                tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=5)
+                db.session.add(tx)
                 db.session.commit()
-    return render_template('index.html', deals=deals, query=query)
+                history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(10).all()
 
-# Profile Update Route (Save 5 Fields)
+    return render_template('index.html', deals=deals, query=query, history=history)
+
+# API: Watch Ad and Claim Coins
+@app.route('/api/claim-ad-reward', methods=['POST'])
+@login_required
+def claim_ad_reward():
+    current_user.coins += 10
+    tx = Transaction(user_id=current_user.id, title="Watched Video / Ad Bonus", coins=10)
+    db.session.add(tx)
+    db.session.commit()
+    return jsonify({"success": True, "coins": current_user.coins, "reward": 10})
+
+# API: Complete Task and Win Coins
+@app.route('/api/complete-task', methods=['POST'])
+@login_required
+def complete_task():
+    data = request.get_json() or {}
+    task_name = data.get('task_name', 'Task Bonus')
+    reward_coins = int(data.get('reward', 25))
+
+    current_user.coins += reward_coins
+    tx = Transaction(user_id=current_user.id, title=f"Completed Task: {task_name}", coins=reward_coins)
+    db.session.add(tx)
+    db.session.commit()
+    return jsonify({"success": True, "coins": current_user.coins, "reward": reward_coins})
+
+# Profile Update Route
 @app.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
@@ -227,6 +263,10 @@ def google_authorize():
             )
             db.session.add(user)
             db.session.commit()
+            # Welcome Bonus Entry
+            welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus", coins=50)
+            db.session.add(welcome_tx)
+            db.session.commit()
         else:
             if not user.profile_pic or "flaticon" in user.profile_pic:
                 user.profile_pic = picture
@@ -277,11 +317,11 @@ def view_users():
                 <th>Photo</th>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Mobile Number</th>
+                <th>Mobile</th>
                 <th>UPI ID</th>
                 <th>Bank A/C & IFSC</th>
                 <th>Profile Status</th>
-                <th>Coins</th>
+                <th>Coins Balance</th>
             </tr>
     """
 
