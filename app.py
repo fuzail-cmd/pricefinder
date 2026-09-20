@@ -3,13 +3,13 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, date
+from datetime import datetime
 
-# Scraper module import
+# Import scraper function
 from scraper import fetch_all_deals
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'pricedekho-secure-token-2026'
+app.config['SECRET_KEY'] = 'pricedekho-master-key-2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pricedekho.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -52,7 +52,6 @@ def home():
     query = request.args.get('q', '').strip()
     deals = []
     
-    # Query hone par hi scraper trigger hoga, refresh par empty rahega
     if query:
         deals = fetch_all_deals(query)
         
