@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PriceDekho - Compare, Earn & Win Cash</title>
+
+  <!-- Anti-AdBlocker Detection Script -->
+  <script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" onerror="window.adBlockerDetected=true;"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -179,7 +183,7 @@
       cursor: pointer;
     }
 
-    /* Financial Status Cards */
+    /* Financial Cards */
     .wallet-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -606,7 +610,7 @@
   <!-- Main Body -->
   <div class="container">
     
-    <!-- 1. Search Bar at Top -->
+    <!-- Search Bar -->
     <section class="search-section">
       <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Compare Products & Earn Rewards</h1>
       <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find lowest prices on Amazon & Flipkart and earn real cash.</p>
@@ -617,7 +621,7 @@
       </form>
     </section>
 
-    <!-- 2. Search Deals (If Searched) -->
+    <!-- Search Deals -->
     {% if deals %}
       <div style="margin-bottom: 30px;">
         <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">Top Results for "{{ query }}"</h3>
@@ -645,7 +649,7 @@
       </div>
     {% endif %}
 
-    <!-- 3. Logged-in User Dashboard -->
+    <!-- Logged-in User Dashboard -->
     {% if current_user.is_authenticated %}
       
       <!-- Wallet Financial Status Cards -->
@@ -710,7 +714,7 @@
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
             <h3 class="card-title">Watch Ads & Earn Coins</h3>
-            <p class="card-desc">Watch live sponsored ad on Adsterra network for 15 seconds to earn 10 instant coins. (Zero skip allowed).</p>
+            <p class="card-desc">Watch live sponsored ad on Adsterra network for 15 seconds to earn 10 instant coins. (AdBlocker not allowed).</p>
           </div>
           <button type="button" class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdsterraFlow()">
             ▶ Watch Ad (+10 Coins)
@@ -788,7 +792,7 @@
       <div style="background: #f8fafc; border: 1.5px dashed #cbd5e1; border-radius: 12px; padding: 20px; margin-bottom: 16px;">
         <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Sponsored Ad Active</h3>
         <p style="font-size: 13px; color: #64748b; line-height: 1.4;">
-          Sponsor ad page aapke naye tab me open ho chuki hai. Kripya use band na karein aur pure 15 seconds tak explore karein.
+          Sponsor ad page aapke naye tab me open ho chuki hai. Kripya use band na karein aur pure 15 seconds tak open rakhein.
         </p>
       </div>
 
@@ -943,7 +947,7 @@
       if (modal) modal.style.display = 'none';
     }
 
-    // Payout Request Handler
+    // Payout Request
     async function submitPayoutRequest() {
       if (!confirm("Kya aap ₹50 payout request submit karna chahte hain? 500 Coins deduct ho jayenge.")) {
         return;
@@ -960,20 +964,61 @@
       }
     }
 
-    // Real Adsterra Direct Link Integration (Strict 15 Seconds Non-Skip)
+    // Function: Check if AdBlocker is Active
+    async function checkAdBlocker() {
+      if (window.adBlockerDetected) return true;
+
+      const bait = document.createElement('div');
+      bait.className = 'adsbox ad-placement pub_300x250 pub_300x250m pub_728x90 text-ad textAd text_ad text_ads text-ads text-ad-links';
+      bait.style.position = 'absolute';
+      bait.style.left = '-9999px';
+      bait.style.top = '-9999px';
+      document.body.appendChild(bait);
+
+      const isBlocked = (bait.offsetParent === null || bait.offsetHeight === 0 || bait.offsetLeft === 0 || bait.offsetTop === 0);
+      document.body.removeChild(bait);
+      return isBlocked;
+    }
+
+    // Real Adsterra Flow (Anti-Cheat, AdBlocker & Popup Protection)
     async function startAdsterraFlow() {
       const btn = document.getElementById('startAdBtn');
-      btn.innerText = "Loading Live Ad...";
+      btn.innerText = "Checking Ad Environment...";
       btn.disabled = true;
+
+      // 1. AdBlocker Check
+      const hasAdBlock = await checkAdBlocker();
+      if (hasAdBlock) {
+        alert("⚠️ AdBlocker Detected!\n\nAapke browser me AdBlocker active hai. Coins paane ke liye AdBlocker ko disable ya pause karein.");
+        btn.innerText = "▶ Watch Ad (+10 Coins)";
+        btn.disabled = false;
+        return;
+      }
+
+      btn.innerText = "Loading Live Ad...";
 
       try {
         const res = await fetch('/api/load-ad');
         const data = await res.json();
 
-        // 1. Open live sponsor ad in a new window/tab
-        window.open(data.ad_url, '_blank');
+        if (!data.available) {
+          alert("Ad filhal load nahi hui. Kripya 10 second baad dobara koshish karein.");
+          btn.innerText = "▶ Watch Ad (+10 Coins)";
+          btn.disabled = false;
+          return;
+        }
 
-        // 2. Open countdown modal on current page
+        // 2. Open Ad Window & Check Popup Blocker
+        const adWindow = window.open(data.ad_url, '_blank');
+
+        if (!adWindow || adWindow.closed || typeof adWindow.closed === 'undefined') {
+          alert("⚠️ Browser ne Ad tab block kar diya!\n\nBrowser URL bar par 'Pop-ups blocked' icon par click karke 'Always allow pop-ups' select karein.");
+          btn.innerText = "▶ Watch Ad (+10 Coins)";
+          btn.disabled = false;
+          return;
+        }
+
+        // 3. Start Modal Countdown
         const adModal = document.getElementById('adPlayerModal');
         adModal.style.display = 'flex';
 
@@ -983,6 +1028,16 @@
         claimBtn.style.display = 'none';
 
         const interval = setInterval(() => {
+          // Check: Agar user ne ad tab 15 second se pehle band kar di
+          if (adWindow.closed && seconds > 2) {
+            clearInterval(interval);
+            adModal.style.display = 'none';
+            alert("❌ Cheat Detected: Aapne ad window 15 second se pehle hi band kar di! Coins claim nahi honge.");
+            btn.innerText = "▶ Watch Ad (+10 Coins)";
+            btn.disabled = false;
+            return;
+          }
+
           seconds--;
           if (seconds > 0) {
             timerBadge.innerText = `⏳ Ad Playing in New Window (${seconds}s remaining)...`;
@@ -995,7 +1050,7 @@
         }, 1000);
 
       } catch (e) {
-        alert("Error loading ad network. Try again!");
+        alert("Network Error! Try again.");
         btn.innerText = "▶ Watch Ad (+10 Coins)";
         btn.disabled = false;
       }
@@ -1011,7 +1066,7 @@
         const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
         const data = await res.json();
         if (data.success) {
-          alert(`🎉 Congratulations! Full ad completed. You received +${data.reward} Coins!`);
+          alert(`🎉 Congratulations! Full 15s ad completed. You received +${data.reward} Coins!`);
           document.getElementById('adPlayerModal').style.display = 'none';
           window.location.reload();
         } else {
