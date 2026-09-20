@@ -14,7 +14,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_production_secret_2026")
 
-# Database Setup: Permanent PostgreSQL on Render, SQLite fallback
+# Database Setup: Permanent PostgreSQL on Render with auto-protocol conversion
 database_url = os.environ.get("DATABASE_URL")
 if database_url:
     if database_url.startswith("postgres://"):
@@ -25,6 +25,10 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pricedekho.db')
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
 db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
@@ -38,12 +42,13 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False, default="SECURE_OAUTH_PASS")
     profile_pic = db.Column(db.String(500), nullable=True, default="")
-    coins = db.Column(db.Integer, default=50) # Welcome Bonus 50 Coins (₹0.50)
+    coins = db.Column(db.Integer, default=50)  # Welcome Bonus: 50 Coins (₹0.50)
     country_code = db.Column(db.String(10), nullable=True, default="+91")
     phone = db.Column(db.String(20), nullable=True, default="")
     upi_id = db.Column(db.String(100), nullable=True, default="")
     bank_account = db.Column(db.String(50), nullable=True, default="")
     bank_ifsc = db.Column(db.String(30), nullable=True, default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     transactions = db.relationship('Transaction', backref='user', lazy=True, cascade="all, delete-orphan")
     payouts = db.relationship('PayoutRequest', backref='user', lazy=True, cascade="all, delete-orphan")
 
@@ -197,7 +202,7 @@ def home():
 
     if current_user.is_authenticated:
         try:
-            history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
+            history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(25).all()
             pending_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").order_by(PayoutRequest.timestamp.desc()).first()
             last_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Completed").order_by(PayoutRequest.completed_at.desc()).first()
         except Exception:
@@ -206,7 +211,6 @@ def home():
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         if query:
-            # Clean search: No coin exploit
             deals = search_products(query)
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
@@ -228,7 +232,7 @@ def load_ad():
 def claim_ad_reward():
     start_time = session.get('ad_start_time')
     if not start_time:
-        return jsonify({"success": False, "message": "Ad session invalid. Kripya link open karke 15 second dekhein!"}), 400
+        return jsonify({"success": False, "message": "Ad session invalid. Kripya ad link open karke 15 second dekhein!"}), 400
 
     elapsed = time.time() - start_time
     if elapsed < 14.5:
@@ -262,15 +266,15 @@ def load_monetag_task():
 def claim_monetag_task():
     start_time = session.get('task_start_time')
     if not start_time:
-        return jsonify({"success": False, "message": "Task session invalid. Kripya task link open karke interact karein!"}), 400
+        return jsonify({"success": False, "message": "Task session invalid. Kripya task open karke 30s interact karein!"}), 400
 
     elapsed = time.time() - start_time
     if elapsed < 29.0:
         remaining = int(30 - elapsed)
-        return jsonify({"success": False, "message": f"Task abhi poora nahi hua! Kripya sponsor page par aur {remaining}s rukhein aur scroll karein."}), 400
+        return jsonify({"success": False, "message": f"Task incomplete! Kripya sponsor page par {remaining}s aur interact karein."}), 400
 
     try:
-        current_user.coins += 5 # +5 Coins = ₹0.05
+        current_user.coins += 5  # +5 Coins = ₹0.05
         tx = Transaction(user_id=current_user.id, title="Completed Monetag Sponsored Task (30s)", coins=5)
         db.session.add(tx)
         db.session.commit()
@@ -453,16 +457,18 @@ def view_users():
 
         <h2>👥 Registered Users (Total: {len(users)})</h2>
         <table>
-            <tr><th>Name</th><th>Email</th><th>Phone</th><th>UPI ID</th><th>Coins</th><th>Balance (INR)</th></tr>
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>UPI ID</th><th>Bank Info</th><th>Coins</th><th>Balance (INR)</th></tr>
     """
     for u in users:
+        bank_str = f"{u.bank_account} ({u.bank_ifsc})" if (u.bank_account or u.bank_ifsc) else "Not added"
         html += f"""
-            <tr><td>{u.name}</td><td>{u.email}</td><td>{u.phone or 'None'}</td><td><code>{u.upi_id or 'None'}</code></td><td>🪙 <strong>{u.coins}</strong></td><td>₹{u.coins / 100:.2f}</td></tr>
+            <tr><td>{u.name}</td><td>{u.email}</td><td>{u.phone or 'None'}</td><td><code>{u.upi_id or 'None'}</code></td><td>{bank_str}</td><td>🪙 <strong>{u.coins}</strong></td><td>₹{u.coins / 100:.2f}</td></tr>
         """
 
     html += "</table></body></html>"
     return html
 
+# Automatic Table Creation
 with app.app_context():
     db.create_all()
 
