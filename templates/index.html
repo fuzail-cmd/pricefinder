@@ -46,47 +46,7 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 14px;
-    }
-
-    .profile-progress-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .profile-ring-wrap {
-      position: relative;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .profile-ring-wrap svg {
-      transform: rotate(-90deg);
-      width: 40px;
-      height: 40px;
-    }
-
-    .profile-ring-bg { fill: none; stroke: #e2e8f0; stroke-width: 3.5; }
-    .profile-ring-bar {
-      fill: none;
-      stroke: #2563eb;
-      stroke-width: 3.5;
-      stroke-linecap: round;
-      transition: stroke-dashoffset 0.4s ease;
-    }
-
-    .profile-avatar-inside {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      object-fit: cover;
+      gap: 12px;
     }
 
     .coin-badge {
@@ -116,6 +76,85 @@
       width: 100%;
     }
 
+    /* Genuine Profile KYC Card */
+    .profile-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .profile-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .profile-avatar-wrap {
+      position: relative;
+      width: 52px;
+      height: 52px;
+    }
+
+    .profile-avatar-wrap img {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #2563eb;
+    }
+
+    .profile-info h3 {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-verified {
+      background: #dcfce7;
+      color: #15803d;
+      font-size: 11px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .profile-meta {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+
+    .profile-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-edit-profile {
+      background: #f1f5f9;
+      color: #1e293b;
+      border: 1px solid #cbd5e1;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-edit-profile:hover { background: #e2e8f0; }
+
+    /* Search Section */
     .search-section {
       text-align: center;
       margin-bottom: 24px;
@@ -150,6 +189,7 @@
       cursor: pointer;
     }
 
+    /* Financial Cards */
     .wallet-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -242,18 +282,61 @@
     .btn-tasks { background: #2563eb; color: white; }
     .btn-tasks:hover { background: #1d4ed8; }
 
-    .statement-card {
+    /* Collapsible Earning History Box */
+    .history-collapse-box {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      padding: 20px;
       margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .history-header-toggle {
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      background: #ffffff;
+      transition: background 0.2s;
+    }
+
+    .history-header-toggle:hover {
+      background: #f8fafc;
+    }
+
+    .history-header-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .history-toggle-btn {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .history-content {
+      display: none;
+      border-top: 1px solid #f1f5f9;
+      padding: 0 20px 20px 20px;
     }
 
     .statement-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 13px;
+      margin-top: 14px;
     }
 
     .statement-table th {
@@ -325,19 +408,6 @@
     <a href="/" class="brand-logo">Price<span>Dekho</span></a>
     <div class="nav-actions">
       {% if current_user.is_authenticated %}
-        {% set perc = current_user.completion_percentage() %}
-        <div class="profile-progress-container" onclick="openProfileModal()">
-          <div class="profile-ring-wrap">
-            <svg>
-              <circle cx="20" cy="20" r="16" class="profile-ring-bg"></circle>
-              <circle cx="20" cy="20" r="16" class="profile-ring-bar"
-                      stroke-dasharray="100.5"
-                      stroke-dashoffset="{{ 100.5 - (100.5 * perc / 100) }}"></circle>
-            </svg>
-            <img src="{{ current_user.profile_pic or 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}" class="profile-avatar-inside">
-          </div>
-        </div>
-
         <div class="coin-badge">🪙 {{ current_user.coins }} Coins</div>
         <a href="/logout" class="logout-link">Logout</a>
       {% else %}
@@ -349,7 +419,30 @@
   <!-- Main Container -->
   <div class="container">
     
-    <!-- Search Box (Pure Comparison: No Free Coins) -->
+    <!-- Professional User Profile Card -->
+    {% if current_user.is_authenticated %}
+      <div class="profile-card">
+        <div class="profile-left">
+          <div class="profile-avatar-wrap">
+            <img src="{{ current_user.profile_pic or 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}" alt="Profile">
+          </div>
+          <div class="profile-info">
+            <h3>{{ current_user.name }} <span class="badge-verified">✔ Active Member</span></h3>
+            <div class="profile-meta">
+              {{ current_user.email }} • KYC: <strong>{{ current_user.completion_percentage() }}% Completed</strong>
+            </div>
+            <div class="profile-meta" style="color: #0f172a; font-weight: 600; margin-top: 4px;">
+              UPI: <code>{{ current_user.upi_id or 'Not linked' }}</code> | Phone: <code>{{ current_user.phone or 'Not linked' }}</code>
+            </div>
+          </div>
+        </div>
+        <div class="profile-right">
+          <button class="btn-edit-profile" onclick="openProfileModal()">⚙️ Edit KYC / Payment Info</button>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Search Section -->
     <section class="search-section">
       <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Compare Real Online Prices</h1>
       <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find lowest prices on Amazon & Flipkart across India.</p>
@@ -457,29 +550,39 @@
 
       </div>
 
-      <!-- Statements -->
-      <div class="statement-card">
-        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">📊 Earning History & Statement</h3>
-        <table class="statement-table">
-          <thead>
-            <tr><th>Activity</th><th>Timestamp</th><th style="text-align: right;">Coins</th></tr>
-          </thead>
-          <tbody>
-            {% if history %}
-              {% for h in history %}
-                <tr>
-                  <td><strong>{{ h.title }}</strong></td>
-                  <td style="color:#64748b;">{{ h.timestamp.strftime('%d %b, %I:%M %p') }}</td>
-                  <td style="text-align: right; font-weight:700; color:{% if h.coins >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
-                    {{ h.coins }} Coins
-                  </td>
-                </tr>
-              {% endfor %}
-            {% else %}
-              <tr><td colspan="3" style="text-align:center; padding:16px; color:#94a3b8;">No activity yet. Watch ads or complete tasks to start!</td></tr>
-            {% endif %}
-          </tbody>
-        </table>
+      <!-- Collapsible Earning History / Statement -->
+      <div class="history-collapse-box">
+        <div class="history-header-toggle" onclick="toggleEarningHistory()">
+          <div class="history-header-title">
+            <span>📊 Total Earning Statement & Transaction History</span>
+          </div>
+          <button type="button" class="history-toggle-btn" id="historyToggleBtn">
+            👁️ Show Earning Details ▾
+          </button>
+        </div>
+
+        <div class="history-content" id="historyContent">
+          <table class="statement-table">
+            <thead>
+              <tr><th>Activity / Details</th><th>Timestamp</th><th style="text-align: right;">Coins</th></tr>
+            </thead>
+            <tbody>
+              {% if history %}
+                {% for h in history %}
+                  <tr>
+                    <td><strong>{{ h.title }}</strong></td>
+                    <td style="color:#64748b;">{{ h.timestamp.strftime('%d %b, %I:%M %p') }}</td>
+                    <td style="text-align: right; font-weight:700; color:{% if h.coins >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
+                      {{ h.coins }} Coins
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr><td colspan="3" style="text-align:center; padding:16px; color:#94a3b8;">No activity recorded yet. Watch ads or complete tasks to start!</td></tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
       </div>
 
     {% endif %}
@@ -516,6 +619,10 @@
           <input type="text" name="name" value="{{ current_user.name }}" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" required>
         </div>
         <div style="margin-bottom: 10px;">
+          <label style="font-size:12px; font-weight:700;">Profile Pic URL</label>
+          <input type="url" name="profile_pic" value="{{ current_user.profile_pic or '' }}" placeholder="https://..." style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+        </div>
+        <div style="margin-bottom: 10px;">
           <label style="font-size:12px; font-weight:700;">Phone Number</label>
           <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="10-digit number" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" required>
         </div>
@@ -542,6 +649,19 @@
   <script>
     function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
     function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
+
+    // Toggle Earning History Accordion
+    function toggleEarningHistory() {
+      const content = document.getElementById('historyContent');
+      const btn = document.getElementById('historyToggleBtn');
+      if (content.style.display === 'block') {
+        content.style.display = 'none';
+        btn.innerText = '👁️ Show Earning Details ▾';
+      } else {
+        content.style.display = 'block';
+        btn.innerText = '✕ Hide Earning Details ▴';
+      }
+    }
 
     // Accurate AdBlocker Check (No False Positives)
     async function checkAdBlocker() {
