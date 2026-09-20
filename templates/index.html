@@ -144,7 +144,7 @@
       width: 100%;
     }
 
-    /* Top Search Box */
+    /* Search Box */
     .search-section {
       text-align: center;
       margin-bottom: 24px;
@@ -179,7 +179,80 @@
       cursor: pointer;
     }
 
-    /* Dashboard Reward Cards (Side by Side) */
+    /* 3 Financial Status Cards */
+    .wallet-status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .wallet-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    .wallet-card-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #64748b;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wallet-card-val {
+      font-size: 20px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .wallet-card-sub {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    /* Payout Banner Box */
+    .payout-action-box {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      color: white;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .payout-btn {
+      background: #22c55e;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+      transition: all 0.2s;
+    }
+
+    .payout-btn:hover { background: #16a34a; }
+    .payout-btn-disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Dashboard Reward Cards */
     .earning-cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -243,7 +316,6 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      transition: background 0.2s;
     }
 
     .btn-ads { background: #f59e0b; color: white; }
@@ -270,12 +342,6 @@
       padding-bottom: 12px;
     }
 
-    .statement-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: #0f172a;
-    }
-
     .statement-table {
       width: 100%;
       border-collapse: collapse;
@@ -295,10 +361,8 @@
       border-bottom: 1px solid #f1f5f9;
     }
 
-    .credit-coins {
-      color: #16a34a;
-      font-weight: 700;
-    }
+    .credit-coins { color: #16a34a; font-weight: 700; }
+    .debit-coins { color: #dc2626; font-weight: 700; }
 
     /* Deals Grid */
     .deals-grid {
@@ -509,7 +573,7 @@
     <!-- 1. Search Bar at Top -->
     <section class="search-section">
       <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Compare Products & Earn Rewards</h1>
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find the guaranteed lowest price on Amazon & Flipkart.</p>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find lowest prices on Amazon & Flipkart and earn real cash.</p>
       
       <form method="POST" action="/" class="search-box">
         <input type="text" name="query" placeholder="Search phones, electronics, shoes..." value="{{ query }}" required>
@@ -548,10 +612,69 @@
     <!-- 3. Logged-in User Dashboard -->
     {% if current_user.is_authenticated %}
       
-      <!-- Side by Side Action Cards -->
-      <div class="earning-cards-grid">
+      <!-- Wallet Financial Status Cards (Balance, Pending, Last Payment) -->
+      <div class="wallet-status-grid">
         
-        <!-- Card 1: Watch Ads -->
+        <!-- 1. Available Balance Status -->
+        <div class="wallet-card">
+          <div class="wallet-card-header">💰 Available Balance</div>
+          <div class="wallet-card-val">₹{{ current_user.coins / 10 }}</div>
+          <div class="wallet-card-sub" style="color: #2563eb; font-weight: 600;">🪙 {{ current_user.coins }} Coins (10 Coins = ₹1)</div>
+        </div>
+
+        <!-- 2. Pending Payment Status -->
+        <div class="wallet-card">
+          <div class="wallet-card-header">⏳ Pending Payment Status</div>
+          {% if pending_payout %}
+            <div class="wallet-card-val" style="color: #ea580c;">₹{{ pending_payout.amount_inr }}</div>
+            <div class="wallet-card-sub" style="color: #ea580c; font-weight: 600;">● Processing via {{ pending_payout.payment_method }}</div>
+          {% else %}
+            <div class="wallet-card-val" style="color: #94a3b8;">₹0</div>
+            <div class="wallet-card-sub" style="color: #64748b;">No pending withdrawals</div>
+          {% endif %}
+        </div>
+
+        <!-- 3. Last Payment Status -->
+        <div class="wallet-card">
+          <div class="wallet-card-header">✅ Last Payment Status</div>
+          {% if last_payout %}
+            <div class="wallet-card-val" style="color: #16a34a;">₹{{ last_payout.amount_inr }}</div>
+            <div class="wallet-card-sub" style="color: #16a34a; font-weight: 600;">Transferred on {{ last_payout.completed_at.strftime('%d %b %Y') }}</div>
+          {% else %}
+            <div class="wallet-card-val" style="color: #94a3b8;">None</div>
+            <div class="wallet-card-sub" style="color: #64748b;">Reach ₹50 to request payout</div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Minimum Payout Rule Banner (₹50 = 500 Coins) -->
+      <div class="payout-action-box">
+        <div>
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">🎯 Minimum Payout: ₹50 (500 Coins)</h3>
+          <p style="font-size: 13px; color: #cbd5e1;">
+            {% if current_user.coins >= 500 %}
+              🎉 Congratulations! You have unlocked the ₹50 payout threshold.
+            {% else %}
+              You have <strong>{{ current_user.coins }}</strong> coins. Earn <strong>{{ 500 - current_user.coins }}</strong> more coins to request ₹50 instant payout.
+            {% endif %}
+          </p>
+        </div>
+        <div>
+          {% if current_user.coins >= 500 %}
+            <button type="button" class="payout-btn" onclick="submitPayoutRequest()">
+              ⚡ Request ₹50 Payout Now
+            </button>
+          {% else %}
+            <button type="button" class="payout-btn payout-btn-disabled" disabled title="Need 500 coins to unlock">
+              🔒 Locked (Need 500 Coins)
+            </button>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action Cards: Watch Ads & Tasks -->
+      <div class="earning-cards-grid">
         <div class="earn-card">
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
@@ -563,7 +686,6 @@
           </button>
         </div>
 
-        <!-- Card 2: Complete Tasks -->
         <div class="earn-card">
           <div>
             <span class="card-badge badge-tasks">🎯 High Paying Tasks</span>
@@ -574,19 +696,18 @@
             ⚡ Explore Tasks (Win Up to 100 Coins)
           </button>
         </div>
-
       </div>
 
-      <!-- Total Earning Statement (Passbook) -->
+      <!-- Total Earning Statement -->
       <div class="statement-card">
         <div class="statement-header">
           <div>
-            <h3 class="statement-title">📊 Total Earning Statement</h3>
-            <p style="font-size: 12px; color: #64748b; margin-top: 2px;">Your real-time wallet history & coin credits</p>
+            <h3 style="font-size: 16px; font-weight: 800; color: #0f172a;">📊 Total Earning Statement</h3>
+            <p style="font-size: 12px; color: #64748b; margin-top: 2px;">Your real-time wallet history, coin credits & debits</p>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 18px; font-weight: 800; color: #0f172a;">🪙 {{ current_user.coins }}</div>
-            <div style="font-size: 11px; color: #16a34a; font-weight: 700;">≈ ₹{{ current_user.coins / 10 }} Cash Value</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a;">🪙 {{ current_user.coins }} Coins</div>
+            <div style="font-size: 11px; color: #16a34a; font-weight: 700;">₹{{ current_user.coins / 10 }} Available</div>
           </div>
         </div>
 
@@ -595,7 +716,7 @@
             <tr>
               <th>Description / Activity</th>
               <th>Date & Time</th>
-              <th style="text-align: right;">Status</th>
+              <th style="text-align: right;">Status / Coins</th>
             </tr>
           </thead>
           <tbody>
@@ -604,7 +725,15 @@
                 <tr>
                   <td><strong>{{ item.title }}</strong></td>
                   <td style="color: #64748b;">{{ item.timestamp.strftime('%d %b, %I:%M %p') }}</td>
-                  <td style="text-align: right;"><span class="credit-coins">+{{ item.coins }} Coins</span></td>
+                  <td style="text-align: right;">
+                    {% if item.coins > 0 %}
+                      <span class="credit-coins">+{{ item.coins }} Coins</span>
+                    {% elif item.coins < 0 %}
+                      <span class="debit-coins">{{ item.coins }} Coins</span>
+                    {% else %}
+                      <span style="color:#64748b;">Synced</span>
+                    {% endif %}
+                  </td>
                 </tr>
               {% endfor %}
             {% else %}
@@ -634,7 +763,7 @@
         <strong>{{ current_user.completion_percentage() }}% / 100%</strong>
       </div>
 
-      <form method="POST" action="/profile/update" onsubmit="alert('Profile Saved Successfully!')">
+      <form method="POST" action="/profile/update" onsubmit="alert('Profile Details Saved Successfully!')">
         <div class="form-group">
           <label>1. Profile Photo URL</label>
           <input type="url" name="profile_pic" placeholder="https://example.com/photo.jpg" value="{{ current_user.profile_pic or '' }}">
@@ -765,7 +894,24 @@
       if (modal) modal.style.display = 'none';
     }
 
-    // Watch Ad Simulation
+    // Payout Request Handler
+    async function submitPayoutRequest() {
+      if (!confirm("Kya aap ₹50 payout request submit karna chahte hain? 500 Coins deduct ho jayenge.")) {
+        return;
+      }
+      try {
+        const res = await fetch('/api/request-payout', { method: 'POST' });
+        const data = await res.json();
+        alert(data.message);
+        if (data.success) {
+          window.location.reload();
+        }
+      } catch (e) {
+        alert("Error submitting payout request!");
+      }
+    }
+
+    // Watch Ad Handler
     async function watchAd() {
       const btn = document.getElementById('watchAdBtn');
       btn.disabled = true;
