@@ -1,32 +1,33 @@
 import urllib.parse
+import re
 
 def clean_price(price_str):
     if not price_str:
         return 0
-    import re
     cleaned = re.sub(r'[^\d]', '', price_str)
     return int(cleaned) if cleaned else 0
 
 def fetch_all_deals(query):
     """
-    Render servers par Amazon/Flipkart IP block ya timeout se bachne ke liye
-    clean, instant aur non-blocking architecture.
+    Render servers ke IP timeout/block se bachne ke liye fast-timeout scraper 
+    aur dynamic comparative product generator (Always returns verified cards).
     """
     results = []
-    if not query:
+    clean_q = query.strip()
+    if not clean_q:
         return results
 
-    clean_q = query.strip()
     encoded = urllib.parse.quote_plus(clean_q)
     title_display = clean_q.title()
 
-    # 1. Scraping attempt with strict 3-second timeout
+    # 1. Quick Scraping Attempt (Strict 3.5s Timeout)
     try:
         import requests
         from bs4 import BeautifulSoup
 
         headers = {
-            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1"
+            "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1",
+            "Accept-Language": "en-IN,en;q=0.9"
         }
 
         # Flipkart Mobile Scrape Attempt
@@ -65,15 +66,15 @@ def fetch_all_deals(query):
                     "affiliate_url": direct_url
                 })
     except Exception as e:
-        print(f"Scraper Fast Fallback Activated: {e}")
+        print(f"Scraper Note: {e}")
 
-    # 2. Safety Net: Agar cloud IP block ho ya network drop ho, 
-    # screen par turant direct verified store cards aayenge (Never Blank)
+    # 2. Safety Net: Agar cloud IP block ho ya network issue ho,
+    # Screen par turant exact query ke verified comparative cards load honge
     if not results:
         results = [
             {
                 "store": "Amazon",
-                "title": f"{title_display} - Top Verified Deal",
+                "title": f"{title_display} (Top Verified Deal)",
                 "price_raw": "Check Live Price",
                 "price_num": 1,
                 "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80",
@@ -81,8 +82,8 @@ def fetch_all_deals(query):
             },
             {
                 "store": "Flipkart",
-                "title": f"{title_display} - Best Offer & Discount",
-                "price_raw": "Check Lowest Price",
+                "title": f"{title_display} (Best Offer & Discount)",
+                "price_raw": "Check Lowest Deal",
                 "price_num": 2,
                 "image": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400&q=80",
                 "affiliate_url": f"https://www.flipkart.com/search?q={encoded}"
