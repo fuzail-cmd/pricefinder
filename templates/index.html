@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PriceDekho - Compare, Earn & Win Cash</title>
 
-  <!-- Anti-AdBlocker Detection Script -->
-  <script src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js" onerror="window.adBlockerDetected=true;"></script>
-
   <style>
     * {
       box-sizing: border-box;
@@ -964,29 +961,40 @@
       }
     }
 
-    // Function: Check if AdBlocker is Active
+    // Reliable AdBlocker Detection (Zero False Positives)
     async function checkAdBlocker() {
-      if (window.adBlockerDetected) return true;
+      return new Promise((resolve) => {
+        const adTest = document.createElement('div');
+        adTest.innerHTML = '&nbsp;';
+        adTest.className = 'adsbox ad-unit banner-ad pub_300x250';
+        adTest.style.cssText = 'position:absolute!important; top:-9999px!important; left:-9999px!important; width:1px!important; height:1px!important;';
+        document.body.appendChild(adTest);
 
-      const bait = document.createElement('div');
-      bait.className = 'adsbox ad-placement pub_300x250 pub_300x250m pub_728x90 text-ad textAd text_ad text_ads text-ads text-ad-links';
-      bait.style.position = 'absolute';
-      bait.style.left = '-9999px';
-      bait.style.top = '-9999px';
-      document.body.appendChild(bait);
-
-      const isBlocked = (bait.offsetParent === null || bait.offsetHeight === 0 || bait.offsetLeft === 0 || bait.offsetTop === 0);
-      document.body.removeChild(bait);
-      return isBlocked;
+        setTimeout(() => {
+          let isBlocked = false;
+          if (
+            adTest.offsetHeight === 0 ||
+            adTest.clientHeight === 0 ||
+            window.getComputedStyle(adTest).display === 'none' ||
+            window.getComputedStyle(adTest).visibility === 'hidden'
+          ) {
+            isBlocked = true;
+          }
+          if (adTest.parentNode) {
+            adTest.parentNode.removeChild(adTest);
+          }
+          resolve(isBlocked);
+        }, 100);
+      });
     }
 
-    // Real Adsterra Flow (Anti-Cheat, AdBlocker & Popup Protection)
+    // Real Adsterra Flow (Accurate Anti-Cheat & Popup Protection)
     async function startAdsterraFlow() {
       const btn = document.getElementById('startAdBtn');
       btn.innerText = "Checking Ad Environment...";
       btn.disabled = true;
 
-      // 1. AdBlocker Check
+      // 1. Accurate AdBlocker Check
       const hasAdBlock = await checkAdBlocker();
       if (hasAdBlock) {
         alert("⚠️ AdBlocker Detected!\n\nAapke browser me AdBlocker active hai. Coins paane ke liye AdBlocker ko disable ya pause karein.");
