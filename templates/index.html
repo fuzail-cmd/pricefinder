@@ -24,7 +24,7 @@
     .navbar {
       background: #ffffff;
       border-bottom: 1px solid #e2e8f0;
-      padding: 12px 20px;
+      padding: 10px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -47,23 +47,74 @@
     .nav-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
-    .user-profile-box {
-      text-align: right;
-      line-height: 1.2;
+    /* Circular Progress Ring */
+    .profile-progress-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      text-decoration: none;
     }
 
-    .user-name {
-      font-size: 13px;
+    .profile-ring-wrap {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-ring-wrap svg {
+      transform: rotate(-90deg);
+      width: 44px;
+      height: 44px;
+    }
+
+    .profile-ring-bg {
+      fill: none;
+      stroke: #e2e8f0;
+      stroke-width: 3.5;
+    }
+
+    .profile-ring-bar {
+      fill: none;
+      stroke: #2563eb;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.4s ease;
+    }
+
+    .profile-avatar-inside {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-status-label {
+      font-size: 10px;
       font-weight: 700;
-      color: #0f172a;
+      margin-top: 2px;
+      letter-spacing: -0.2px;
     }
 
-    .user-email {
-      font-size: 11px;
-      color: #64748b;
+    .status-completed {
+      color: #16a34a;
+      background: #dcfce7;
+      padding: 1px 6px;
+      border-radius: 10px;
+    }
+
+    .status-pending {
+      color: #ea580c;
+      background: #ffedd5;
+      padding: 1px 5px;
+      border-radius: 10px;
     }
 
     .coin-badge {
@@ -83,37 +134,12 @@
       color: #ef4444;
       text-decoration: none;
       font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 6px;
-    }
-
-    .logout-link:hover {
-      background: #fee2e2;
-    }
-
-    .google-nav-btn {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #1e293b;
-      text-decoration: none;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-
-    .google-nav-btn:hover {
-      background: #f1f5f9;
     }
 
     /* Hero & Search */
     .hero {
       text-align: center;
-      padding: 40px 16px 20px;
+      padding: 36px 16px 20px;
       max-width: 600px;
       margin: 0 auto;
     }
@@ -156,11 +182,6 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .search-box button:hover {
-      background: #1d4ed8;
     }
 
     /* Deals Grid */
@@ -187,12 +208,6 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .deal-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
     }
 
     .deal-store {
@@ -206,15 +221,8 @@
       margin-bottom: 10px;
     }
 
-    .store-amazon {
-      background: #ffedd5;
-      color: #c2410c;
-    }
-
-    .store-flipkart {
-      background: #dbeafe;
-      color: #1d4ed8;
-    }
+    .store-amazon { background: #ffedd5; color: #c2410c; }
+    .store-flipkart { background: #dbeafe; color: #1d4ed8; }
 
     .deal-img-wrapper {
       text-align: center;
@@ -261,11 +269,95 @@
       font-size: 13px;
       font-weight: 600;
       text-decoration: none;
-      transition: background 0.2s;
     }
 
-    .buy-btn:hover {
-      background: #2563eb;
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; z-index: 99999;
+    }
+
+    .modal-card {
+      background: #ffffff; border-radius: 16px;
+      padding: 24px; max-width: 440px; width: 100%;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .modal-header h2 { font-size: 17px; font-weight: 800; color: #0f172a; }
+    .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #64748b; }
+
+    .score-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      font-size: 12px;
+      color: #1e40af;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      margin-bottom: 4px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .phone-input-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .phone-input-row select {
+      width: 95px;
+      background: #f8fafc;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .phone-input-row input {
+      flex: 1;
+    }
+
+    .save-profile-btn {
+      width: 100%;
+      background: #0f172a;
+      color: white;
+      border: none;
+      padding: 11px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 10px;
     }
 
     /* Gateway Modal */
@@ -275,7 +367,7 @@
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(4px);
       display: flex; align-items: center; justify-content: center;
-      padding: 16px; z-index: 99999;
+      padding: 16px; z-index: 99998;
     }
 
     .gateway-card {
@@ -284,34 +376,11 @@
       text-align: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
     }
 
-    .gateway-badge {
-      display: inline-block; background: #fef3c7; color: #b45309;
-      font-size: 12px; font-weight: 700; padding: 4px 10px;
-      border-radius: 20px; margin-bottom: 12px;
-    }
-
-    .gateway-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
-    .gateway-title span { color: #2563eb; }
-    .gateway-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.4; }
-
     .google-btn {
       display: flex; align-items: center; justify-content: center; gap: 10px;
       background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px;
       padding: 11px; font-size: 14px; font-weight: 600; color: #1e293b;
-      text-decoration: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .google-btn img { width: 18px; height: 18px; }
-
-    .gateway-divider { position: relative; text-align: center; margin: 18px 0; }
-    .gateway-divider:before {
-      content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #e2e8f0;
-    }
-    .gateway-divider span { background: #ffffff; padding: 0 8px; font-size: 11px; color: #94a3b8; position: relative; }
-
-    .skip-btn {
-      background: transparent; border: none; color: #2563eb;
-      font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline;
+      text-decoration: none;
     }
   </style>
 </head>
@@ -322,15 +391,35 @@
     <a href="/" class="brand-logo">Price<span>Dekho</span></a>
     <div class="nav-actions">
       {% if current_user.is_authenticated %}
-        <!-- Logged-in user information -->
-        <div class="user-profile-box">
-          <div class="user-name">👤 {{ current_user.name }}</div>
-          <div class="user-email">{{ current_user.email }}</div>
+        {% set perc = current_user.completion_percentage() %}
+        
+        <!-- Profile Ring Container -->
+        <div class="profile-progress-container" onclick="openProfileModal()" title="Click to complete profile">
+          <div class="profile-ring-wrap">
+            <svg>
+              <circle cx="22" cy="22" r="18" class="profile-ring-bg"></circle>
+              <circle cx="22" cy="22" r="18" class="profile-ring-bar"
+                      stroke-dasharray="113.1"
+                      stroke-dashoffset="{{ 113.1 - (113.1 * perc / 100) }}"
+                      style="stroke: {% if perc == 100 %}#16a34a{% else %}#2563eb{% endif %};">
+              </circle>
+            </svg>
+            <img src="{{ current_user.profile_pic or 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}"
+                 alt="User" class="profile-avatar-inside">
+          </div>
+          <div class="profile-status-label">
+            {% if perc == 100 %}
+              <span class="status-completed">✔ Completed</span>
+            {% else %}
+              <span class="status-pending">{{ perc }}% Done</span>
+            {% endif %}
+          </div>
         </div>
-        <div class="coin-badge">🪙 {{ current_user.coins }} Coins</div>
+
+        <div class="coin-badge">🪙 {{ current_user.coins }}</div>
         <a href="/logout" class="logout-link">Logout</a>
       {% else %}
-        <a href="/login/google" class="google-nav-btn">
+        <a href="/login/google" class="google-btn" style="padding: 6px 14px; font-size: 13px;">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 14px; height: 14px;">
           Sign In
         </a>
@@ -348,7 +437,7 @@
     </form>
   </section>
 
-  <!-- Deals Section -->
+  <!-- Deals -->
   <main class="container">
     {% if deals %}
       <div class="deals-grid">
@@ -373,48 +462,113 @@
         {% endfor %}
       </div>
     {% elif query %}
-      <p style="text-align: center; color: #64748b; margin-top: 30px;">No deals found for "{{ query }}". Try another keyword.</p>
+      <p style="text-align: center; color: #64748b; margin-top: 30px;">No deals found for "{{ query }}".</p>
     {% endif %}
   </main>
 
-  <!-- Gateway Modal -->
+  <!-- Profile Modal with Country Code & 10 Digit Phone -->
+  {% if current_user.is_authenticated %}
+  <div id="profileModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Profile & Bank Verification</h2>
+        <button class="close-btn" onclick="closeProfileModal()">&times;</button>
+      </div>
+
+      <div class="score-banner">
+        <span>Profile Completion Score:</span>
+        <strong>{{ current_user.completion_percentage() }}% / 100%</strong>
+      </div>
+
+      <form method="POST" action="/profile/update">
+        <!-- 1. Profile Picture -->
+        <div class="form-group">
+          <label>1. Profile Picture URL</label>
+          <input type="url" name="profile_pic" placeholder="https://example.com/photo.jpg" value="{{ current_user.profile_pic or '' }}">
+        </div>
+
+        <!-- 2. Full Name -->
+        <div class="form-group">
+          <label>2. Full Name</label>
+          <input type="text" name="name" value="{{ current_user.name }}" required>
+        </div>
+
+        <!-- 3. Mobile Number (Country Code + 10 Digits) -->
+        <div class="form-group">
+          <label>3. Mobile Number</label>
+          <div class="phone-input-row">
+            <select name="country_code">
+              <option value="+91" {% if current_user.country_code == '+91' or not current_user.country_code %}selected{% endif %}>🇮🇳 +91</option>
+              <option value="+1" {% if current_user.country_code == '+1' %}selected{% endif %}>🇺🇸 +1</option>
+              <option value="+44" {% if current_user.country_code == '+44' %}selected{% endif %}>🇬🇧 +44</option>
+              <option value="+971" {% if current_user.country_code == '+971' %}selected{% endif %}>🇦🇪 +971</option>
+              <option value="+65" {% if current_user.country_code == '+65' %}selected{% endif %}>🇸🇬 +65</option>
+            </select>
+            <input type="tel" name="phone" maxlength="10" placeholder="10-digit mobile number" value="{{ current_user.phone or '' }}">
+          </div>
+        </div>
+
+        <!-- 4. UPI ID -->
+        <div class="form-group">
+          <label>4. UPI ID (For Instant Cash Redeem)</label>
+          <input type="text" name="upi_id" placeholder="e.g. yourname@upi" value="{{ current_user.upi_id or '' }}">
+        </div>
+
+        <!-- 5. Bank Account & IFSC -->
+        <div style="display: flex; gap: 8px;">
+          <div class="form-group" style="flex: 2;">
+            <label>5. Bank A/C Number</label>
+            <input type="text" name="bank_account" placeholder="Account Number" value="{{ current_user.bank_account or '' }}">
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label>IFSC Code</label>
+            <input type="text" name="bank_ifsc" placeholder="SBIN00..." value="{{ current_user.bank_ifsc or '' }}">
+          </div>
+        </div>
+
+        <button type="submit" class="save-profile-btn">💾 Save All Details</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Guest Gateway Modal -->
   {% if not current_user.is_authenticated %}
   <div id="authGatewayModal" class="gateway-overlay">
     <div class="gateway-card">
-      <div class="gateway-badge">🪙 Free 50 Welcome Coins</div>
-      <h2 class="gateway-title">Welcome to Price<span>Dekho</span></h2>
-      <p class="gateway-subtitle">
-        Compare prices freely across Amazon & Flipkart, or sign in with Google to start earning coins and cashback.
-      </p>
-
+      <div style="background:#fef3c7; color:#b45309; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; display:inline-block; margin-bottom:12px;">🪙 Free 50 Welcome Coins</div>
+      <h2 style="font-size:20px; font-weight:800; margin-bottom:8px;">Welcome to Price<span style="color:#2563eb;">Dekho</span></h2>
+      <p style="font-size:13px; color:#64748b; margin-bottom:20px;">Compare prices freely or sign in with Google to earn cashback and coins.</p>
       <a href="/login/google" class="google-btn">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px;">
         Continue with Google
       </a>
-
-      <div class="gateway-divider"><span>OR</span></div>
-
-      <button type="button" onclick="dismissGateway()" class="skip-btn">
-        Skip for Now (Explore Deals Only) →
-      </button>
+      <div style="margin: 16px 0; color: #94a3b8; font-size: 11px;">OR</div>
+      <button type="button" onclick="dismissGateway()" style="background:none; border:none; color:#2563eb; font-weight:700; cursor:pointer; text-decoration:underline;">Skip for Now →</button>
     </div>
   </div>
   {% endif %}
 
   <script>
+    function openProfileModal() {
+      const modal = document.getElementById('profileModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+      const modal = document.getElementById('profileModal');
+      if (modal) modal.style.display = 'none';
+    }
+
     function dismissGateway() {
       const modal = document.getElementById('authGatewayModal');
-      if (modal) {
-        modal.style.display = 'none';
-      }
+      if (modal) modal.style.display = 'none';
       sessionStorage.setItem('skipAuth', 'true');
     }
 
     if (sessionStorage.getItem('skipAuth') === 'true') {
       const modal = document.getElementById('authGatewayModal');
-      if (modal) {
-        modal.style.display = 'none';
-      }
+      if (modal) modal.style.display = 'none';
     }
   </script>
 </body>
