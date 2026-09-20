@@ -183,7 +183,7 @@
       cursor: pointer;
     }
 
-    /* Financial Cards */
+    /* Financial Cards (100 Coins = ₹1) */
     .wallet-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -221,7 +221,7 @@
       margin-top: 4px;
     }
 
-    /* Payout Banner Box */
+    /* Payout Banner Box (₹50 = 5,000 Coins) */
     .payout-action-box {
       background: linear-gradient(135deg, #1e293b, #0f172a);
       color: white;
@@ -617,7 +617,7 @@
       
       <form method="POST" action="/" class="search-box">
         <input type="text" name="query" placeholder="Search phones, electronics, shoes..." value="{{ query }}" required>
-        <button type="submit">Search</button>
+        <button type="submit">Search (+2 Coins)</button>
       </form>
     </section>
 
@@ -652,12 +652,12 @@
     <!-- Logged-in User Dashboard -->
     {% if current_user.is_authenticated %}
       
-      <!-- Wallet Financial Status Cards -->
+      <!-- Wallet Financial Status Cards (100 Coins = ₹1) -->
       <div class="wallet-status-grid">
         <div class="wallet-card">
           <div class="wallet-card-header">💰 Available Balance</div>
-          <div class="wallet-card-val">₹{{ current_user.coins / 10 }}</div>
-          <div class="wallet-card-sub" style="color: #2563eb; font-weight: 600;">🪙 {{ current_user.coins }} Coins (10 Coins = ₹1)</div>
+          <div class="wallet-card-val">₹{{ (current_user.coins / 100)|round(2) }}</div>
+          <div class="wallet-card-sub" style="color: #2563eb; font-weight: 600;">🪙 {{ current_user.coins }} Coins (100 Coins = ₹1)</div>
         </div>
 
         <div class="wallet-card">
@@ -683,26 +683,26 @@
         </div>
       </div>
 
-      <!-- Minimum Payout Rule Banner (₹50 = 500 Coins) -->
+      <!-- Minimum Payout Rule Banner (₹50 = 5,000 Coins) -->
       <div class="payout-action-box">
         <div>
-          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">🎯 Minimum Payout: ₹50 (500 Coins)</h3>
+          <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">🎯 Minimum Payout: ₹50 (5,000 Coins)</h3>
           <p style="font-size: 13px; color: #cbd5e1;">
-            {% if current_user.coins >= 500 %}
+            {% if current_user.coins >= 5000 %}
               🎉 Congratulations! You have unlocked the ₹50 payout threshold.
             {% else %}
-              You have <strong>{{ current_user.coins }}</strong> coins. Earn <strong>{{ 500 - current_user.coins }}</strong> more coins to request ₹50 instant payout.
+              You have <strong>{{ current_user.coins }}</strong> coins. Earn <strong>{{ 5000 - current_user.coins }}</strong> more coins to request ₹50 instant payout.
             {% endif %}
           </p>
         </div>
         <div>
-          {% if current_user.coins >= 500 %}
+          {% if current_user.coins >= 5000 %}
             <button type="button" class="payout-btn" onclick="submitPayoutRequest()">
               ⚡ Request ₹50 Payout Now
             </button>
           {% else %}
-            <button type="button" class="payout-btn payout-btn-disabled" disabled title="Need 500 coins to unlock">
-              🔒 Locked (Need 500 Coins)
+            <button type="button" class="payout-btn payout-btn-disabled" disabled title="Need 5,000 coins to unlock">
+              🔒 Locked (Need 5,000 Coins)
             </button>
           {% endif %}
         </div>
@@ -714,10 +714,10 @@
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
             <h3 class="card-title">Watch Ads & Earn Coins</h3>
-            <p class="card-desc">Watch live sponsored ad on Adsterra network for 15 seconds to earn 10 instant coins. (AdBlocker not allowed).</p>
+            <p class="card-desc">Watch live sponsored ad on Adsterra network for 15 seconds to earn instant 4 coins. (AdBlocker not allowed).</p>
           </div>
           <button type="button" class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdsterraFlow()">
-            ▶ Watch Ad (+10 Coins)
+            ▶ Watch Ad (+4 Coins)
           </button>
         </div>
 
@@ -728,7 +728,7 @@
             <p class="card-desc">Complete simple tasks like exploring trending stores, surveys, and app downloads.</p>
           </div>
           <button type="button" class="earn-action-btn btn-tasks" onclick="openTasksModal()">
-            ⚡ Explore Tasks (Win Up to 100 Coins)
+            ⚡ Explore Tasks (Win Up to 500 Coins)
           </button>
         </div>
       </div>
@@ -742,7 +742,7 @@
           </div>
           <div style="text-align: right;">
             <div style="font-size: 18px; font-weight: 800; color: #0f172a;">🪙 {{ current_user.coins }} Coins</div>
-            <div style="font-size: 11px; color: #16a34a; font-weight: 700;">₹{{ current_user.coins / 10 }} Available</div>
+            <div style="font-size: 11px; color: #16a34a; font-weight: 700;">₹{{ (current_user.coins / 100)|round(2) }} Available</div>
           </div>
         </div>
 
@@ -797,7 +797,7 @@
       </div>
 
       <button type="button" id="claimRewardBtn" class="claim-ad-btn" onclick="claimFinishedAdReward()">
-        🎉 Claim +10 Coins Now
+        🎉 Claim +4 Coins Now
       </button>
     </div>
   </div>
@@ -875,7 +875,7 @@
             <div style="font-size: 13px; font-weight: 700;">Complete 100% Profile</div>
             <div style="font-size: 11px; color: #64748b;">Fill photo, phone, UPI & bank details</div>
           </div>
-          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Profile KYC Verification', 50)">+50 Coins</button>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Profile KYC Verification', 200)">+200 Coins</button>
         </div>
 
         <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -883,7 +883,7 @@
             <div style="font-size: 13px; font-weight: 700;">Install Sponsor App</div>
             <div style="font-size: 11px; color: #64748b;">Download and open partner shopping app</div>
           </div>
-          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Sponsor App Download', 30)">+30 Coins</button>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Sponsor App Download', 300)">+300 Coins</button>
         </div>
 
         <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
@@ -891,7 +891,7 @@
             <div style="font-size: 13px; font-weight: 700;">Share PriceDekho to WhatsApp</div>
             <div style="font-size: 11px; color: #64748b;">Share with 3 friends or groups</div>
           </div>
-          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('WhatsApp Refer & Share', 20)">+20 Coins</button>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('WhatsApp Refer & Share', 100)">+100 Coins</button>
         </div>
       </div>
     </div>
@@ -902,7 +902,7 @@
   {% if not current_user.is_authenticated %}
   <div id="authGatewayModal" class="gateway-overlay">
     <div class="gateway-card">
-      <div style="background:#fef3c7; color:#b45309; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; display:inline-block; margin-bottom:12px;">🪙 Free 50 Welcome Coins</div>
+      <div style="background:#fef3c7; color:#b45309; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; display:inline-block; margin-bottom:12px;">🪙 Free 100 Welcome Coins (₹1)</div>
       <h2 style="font-size:20px; font-weight:800; margin-bottom:8px;">Welcome to Price<span style="color:#2563eb;">Dekho</span></h2>
       <p style="font-size:13px; color:#64748b; margin-bottom:20px;">Compare prices freely or sign in with Google to start earning coins and real money.</p>
       <a href="/login/google" class="google-btn">
@@ -947,9 +947,9 @@
       if (modal) modal.style.display = 'none';
     }
 
-    // Payout Request
+    // Payout Request (5,000 Coins = ₹50)
     async function submitPayoutRequest() {
-      if (!confirm("Kya aap ₹50 payout request submit karna chahte hain? 500 Coins deduct ho jayenge.")) {
+      if (!confirm("Kya aap ₹50 payout request submit karna chahte hain? 5,000 Coins deduct ho jayenge.")) {
         return;
       }
       try {
@@ -990,7 +990,7 @@
       const hasAdBlock = await checkAdBlocker();
       if (hasAdBlock) {
         alert("⚠️ AdBlocker Detected!\n\nAapke browser me AdBlocker active hai. Coins paane ke liye AdBlocker ko disable ya pause karein.");
-        btn.innerText = "▶ Watch Ad (+10 Coins)";
+        btn.innerText = "▶ Watch Ad (+4 Coins)";
         btn.disabled = false;
         return;
       }
@@ -1003,7 +1003,7 @@
 
         if (!data.available) {
           alert("Ad filhal load nahi hui. Kripya 10 second baad dobara koshish karein.");
-          btn.innerText = "▶ Watch Ad (+10 Coins)";
+          btn.innerText = "▶ Watch Ad (+4 Coins)";
           btn.disabled = false;
           return;
         }
@@ -1013,7 +1013,7 @@
 
         if (!adWindow || adWindow.closed || typeof adWindow.closed === 'undefined') {
           alert("⚠️ Browser ne Ad tab block kar diya!\n\nBrowser URL bar par 'Pop-ups blocked' icon par click karke 'Always allow pop-ups' select karein.");
-          btn.innerText = "▶ Watch Ad (+10 Coins)";
+          btn.innerText = "▶ Watch Ad (+4 Coins)";
           btn.disabled = false;
           return;
         }
@@ -1033,7 +1033,7 @@
             clearInterval(interval);
             adModal.style.display = 'none';
             alert("❌ Cheat Detected: Aapne ad window 15 second se pehle hi band kar di! Coins claim nahi honge.");
-            btn.innerText = "▶ Watch Ad (+10 Coins)";
+            btn.innerText = "▶ Watch Ad (+4 Coins)";
             btn.disabled = false;
             return;
           }
@@ -1051,12 +1051,12 @@
 
       } catch (e) {
         alert("Network Error! Try again.");
-        btn.innerText = "▶ Watch Ad (+10 Coins)";
+        btn.innerText = "▶ Watch Ad (+4 Coins)";
         btn.disabled = false;
       }
     }
 
-    // Claim Verified Ad Coins
+    // Claim Verified Ad Coins (+4 Coins)
     async function claimFinishedAdReward() {
       const claimBtn = document.getElementById('claimRewardBtn');
       claimBtn.innerText = "Verifying & Adding Coins...";
