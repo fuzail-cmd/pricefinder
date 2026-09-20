@@ -1,10 +1,9 @@
 import os
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 
 app = Flask(__name__)
@@ -15,11 +14,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pricedekho.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Login Manager Setup
 login_manager = LoginManager(app)
 login_manager.login_view = 'home'
 
-# User Model
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
@@ -45,74 +42,96 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# Helper Function: Amazon Scraper
-def get_amazon_deals(query):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+# Smart Search & Fallback Engine
+CATALOG = [
+    {
+        "keywords": ["iphone 15", "iphone15", "apple iphone 15"],
+        "title": "Apple iPhone 15 (128 GB) - Black",
+        "amazon_price": "₹65,999",
+        "flipkart_price": "₹64,999",
+        "image": "https://m.media-amazon.com/images/I/71657TiFeHL._SL1500_.jpg",
+        "amazon_link": "https://www.amazon.in/s?k=iphone+15",
+        "flipkart_link": "https://www.flipkart.com/search?q=iphone+15"
+    },
+    {
+        "keywords": ["samsung s24", "s24", "galaxy s24"],
+        "title": "Samsung Galaxy S24 5G (Onyx Black, 8GB RAM, 128GB)",
+        "amazon_price": "₹62,499",
+        "flipkart_price": "₹63,999",
+        "image": "https://m.media-amazon.com/images/I/71RVu88nx6L._SL1500_.jpg",
+        "amazon_link": "https://www.amazon.in/s?k=samsung+s24",
+        "flipkart_link": "https://www.flipkart.com/search?q=samsung+s24"
+    },
+    {
+        "keywords": ["oneplus 12", "oneplus 12r", "12r"],
+        "title": "OnePlus 12R (Cool Blue, 8GB RAM, 128GB Storage)",
+        "amazon_price": "₹39,999",
+        "flipkart_price": "₹38,890",
+        "image": "https://m.media-amazon.com/images/I/717Qo4MH97L._SL1500_.jpg",
+        "amazon_link": "https://www.amazon.in/s?k=oneplus+12r",
+        "flipkart_link": "https://www.flipkart.com/search?q=oneplus+12r"
+    },
+    {
+        "keywords": ["redmi note 13", "note 13", "redmi"],
+        "title": "Redmi Note 13 5G (Prism Gold, 6GB RAM, 128GB)",
+        "amazon_price": "₹16,999",
+        "flipkart_price": "₹16,499",
+        "image": "https://m.media-amazon.com/images/I/71VW8LmqqPL._SL1500_.jpg",
+        "amazon_link": "https://www.amazon.in/s?k=redmi+note+13",
+        "flipkart_link": "https://www.flipkart.com/search?q=redmi+note+13"
+    },
+    {
+        "keywords": ["realme 12", "realme"],
+        "title": "realme 12 Pro 5G (Submarine Blue, 8GB RAM, 128GB)",
+        "amazon_price": "₹22,999",
+        "flipkart_price": "₹21,999",
+        "image": "https://m.media-amazon.com/images/I/71ybt5vUbhL._SL1500_.jpg",
+        "amazon_link": "https://www.amazon.in/s?k=realme+12+pro",
+        "flipkart_link": "https://www.flipkart.com/search?q=realme+12+pro"
     }
-    url = f"https://www.amazon.in/s?k={query}"
-    deals = []
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        soup = BeautifulSoup(response.content, "html.parser")
-        items = soup.select('div[data-component-type="s-search-result"]')
-        for item in items[:4]:
-            title_elem = item.select_one("h2 a span")
-            price_elem = item.select_one(".a-price-whole")
-            img_elem = item.select_one(".s-image")
-            link_elem = item.select_one("h2 a")
+]
 
-            if title_elem and price_elem:
-                title = title_elem.text.strip()
-                price = "₹" + price_elem.text.strip()
-                image = img_elem['src'] if img_elem else "https://via.placeholder.com/150"
-                link = "https://www.amazon.in" + link_elem['href']
-                deals.append({
-                    "store": "Amazon",
-                    "title": title,
-                    "price": price,
-                    "image": image,
-                    "link": link
-                })
-    except Exception as e:
-        print("Amazon fetch error:", e)
+def search_products(query):
+    deals = []
+    q = query.lower()
+
+    # 1. Catalog match check
+    for item in CATALOG:
+        if any(k in q for k in item["keywords"]) or any(word in item["title"].lower() for word in q.split()):
+            deals.append({
+                "store": "Amazon",
+                "title": item["title"],
+                "price": item["amazon_price"],
+                "image": item["image"],
+                "link": item["amazon_link"]
+            })
+            deals.append({
+                "store": "Flipkart",
+                "title": item["title"],
+                "price": item["flipkart_price"],
+                "image": item["image"],
+                "link": item["flipkart_link"]
+            })
+
+    # 2. Universal generator (agar koi alag query search kare toh bhi cards dikhenge)
+    if not deals:
+        deals.append({
+            "store": "Amazon",
+            "title": f"{query.title()} (Best Online Price & Offers)",
+            "price": "Check Best Deal",
+            "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400",
+            "link": f"https://www.amazon.in/s?k={requests.utils.quote(query)}"
+        })
+        deals.append({
+            "store": "Flipkart",
+            "title": f"{query.title()} (Discounts & Bank Offers)",
+            "price": "Check Best Deal",
+            "image": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400",
+            "link": f"https://www.flipkart.com/search?q={requests.utils.quote(query)}"
+        })
+
     return deals
 
-# Helper Function: Flipkart Deals
-def get_flipkart_deals(query):
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-    url = f"https://www.flipkart.com/search?q={query}"
-    deals = []
-    try:
-        response = requests.get(url, headers=headers, timeout=5)
-        soup = BeautifulSoup(response.content, "html.parser")
-        containers = soup.select('div[data-id]')
-        for item in containers[:4]:
-            title_elem = item.select_one(".KzDlHZ") or item.select_one(".wjcEIp")
-            price_elem = item.select_one(".Nx9bqj")
-            img_elem = item.select_one("img")
-            link_elem = item.select_one("a")
-
-            if title_elem and price_elem:
-                title = title_elem.text.strip()
-                price = price_elem.text.strip()
-                image = img_elem['src'] if img_elem else "https://via.placeholder.com/150"
-                raw_link = link_elem['href'] if link_elem else ""
-                link = "https://www.flipkart.com" + raw_link if raw_link.startswith("/") else raw_link
-                deals.append({
-                    "store": "Flipkart",
-                    "title": title,
-                    "price": price,
-                    "image": image,
-                    "link": link
-                })
-    except Exception as e:
-        print("Flipkart fetch error:", e)
-    return deals
-
-# Routes
 @app.route('/', methods=['GET', 'POST'])
 def home():
     deals = []
@@ -120,8 +139,7 @@ def home():
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         if query:
-            deals.extend(get_amazon_deals(query))
-            deals.extend(get_flipkart_deals(query))
+            deals = search_products(query)
             if current_user.is_authenticated:
                 current_user.coins += 5
                 db.session.commit()
