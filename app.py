@@ -178,7 +178,6 @@ def google_authorize():
             db.session.commit()
 
         login_user(user)
-        # Terminal/Logs me print hoga
         print(f"--> [USER LOGGED IN] Name: {user.name} | Email: {user.email} | Coins: {user.coins}")
         return redirect(url_for('home'))
     except Exception as e:
@@ -190,6 +189,59 @@ def google_authorize():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+# Secret Admin Dashboard Route
+@app.route('/admin/users')
+def view_users():
+    secret_key = request.args.get('key')
+    if secret_key != "pricedekho_admin_99":
+        return "Access Denied: Invalid Key", 403
+
+    users = User.query.all()
+    total = len(users)
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>PriceDekho Admin - Users List</title>
+        <style>
+            body {{ font-family: sans-serif; padding: 24px; background: #f8fafc; color: #0f172a; }}
+            h2 {{ margin-bottom: 8px; }}
+            .badge {{ background: #2563eb; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 16px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+            th, td {{ padding: 12px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 14px; }}
+            th {{ background: #f1f5f9; font-weight: 700; }}
+            tr:hover {{ background: #f8fafc; }}
+        </style>
+    </head>
+    <body>
+        <h2>Registered Users <span class="badge">Total: {total}</span></h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Coins</th>
+            </tr>
+    """
+
+    for u in users:
+        html += f"""
+            <tr>
+                <td>{u.id}</td>
+                <td>{u.name}</td>
+                <td>{u.email}</td>
+                <td>🪙 {u.coins}</td>
+            </tr>
+        """
+
+    html += """
+        </table>
+    </body>
+    </html>
+    """
+    return html
 
 with app.app_context():
     db.create_all()
