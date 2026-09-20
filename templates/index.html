@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PriceDekho - Compare Prices & Earn Rewards</title>
+  <title>PriceDekho - Compare, Earn & Win Cash</title>
   <style>
     * {
       box-sizing: border-box;
@@ -61,8 +61,8 @@
 
     .profile-ring-wrap {
       position: relative;
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -70,8 +70,8 @@
 
     .profile-ring-wrap svg {
       transform: rotate(-90deg);
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
     }
 
     .profile-ring-bg {
@@ -90,8 +90,8 @@
 
     .profile-avatar-inside {
       position: absolute;
-      width: 34px;
-      height: 34px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       object-fit: cover;
     }
@@ -100,7 +100,6 @@
       font-size: 10px;
       font-weight: 700;
       margin-top: 2px;
-      letter-spacing: -0.2px;
     }
 
     .status-completed {
@@ -136,24 +135,18 @@
       font-weight: 600;
     }
 
-    /* Hero & Search */
-    .hero {
-      text-align: center;
-      padding: 36px 16px 20px;
-      max-width: 600px;
+    /* Container */
+    .container {
+      max-width: 1000px;
       margin: 0 auto;
+      padding: 20px 16px;
+      flex: 1;
+      width: 100%;
     }
 
-    .hero h1 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: #0f172a;
-    }
-
-    .hero p {
-      font-size: 14px;
-      color: #64748b;
+    /* Top Search Box */
+    .search-section {
+      text-align: center;
       margin-bottom: 24px;
     }
 
@@ -163,6 +156,8 @@
       border: 1.5px solid #cbd5e1;
       border-radius: 12px;
       overflow: hidden;
+      max-width: 600px;
+      margin: 0 auto;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
@@ -184,15 +179,131 @@
       cursor: pointer;
     }
 
-    /* Deals Grid */
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px 16px;
-      flex: 1;
-      width: 100%;
+    /* Dashboard Reward Cards (Side by Side) */
+    .earning-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
+    .earn-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .earn-card:hover {
+      transform: translateY(-2px);
+      border-color: #93c5fd;
+    }
+
+    .card-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      display: inline-block;
+      width: fit-content;
+      margin-bottom: 12px;
+    }
+
+    .badge-ads { background: #fef3c7; color: #b45309; }
+    .badge-tasks { background: #dbeafe; color: #1d4ed8; }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .earn-action-btn {
+      width: 100%;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+
+    .btn-ads { background: #f59e0b; color: white; }
+    .btn-ads:hover { background: #d97706; }
+
+    .btn-tasks { background: #2563eb; color: white; }
+    .btn-tasks:hover { background: #1d4ed8; }
+
+    /* Statement / History Section */
+    .statement-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .statement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #f1f5f9;
+      padding-bottom: 12px;
+    }
+
+    .statement-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .statement-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .statement-table th {
+      text-align: left;
+      padding: 10px;
+      background: #f8fafc;
+      color: #64748b;
+      font-weight: 600;
+      border-radius: 4px;
+    }
+
+    .statement-table td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .credit-coins {
+      color: #16a34a;
+      font-weight: 700;
+    }
+
+    /* Deals Grid */
     .deals-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -271,7 +382,7 @@
       text-decoration: none;
     }
 
-    /* Modal */
+    /* Modal Styles */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -293,21 +404,7 @@
       margin-bottom: 14px;
     }
 
-    .modal-header h2 { font-size: 17px; font-weight: 800; color: #0f172a; }
     .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #64748b; }
-
-    .score-banner {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 16px;
-      font-size: 12px;
-      color: #1e40af;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
 
     .form-group {
       margin-bottom: 12px;
@@ -331,22 +428,6 @@
       outline: none;
     }
 
-    .phone-input-row {
-      display: flex;
-      gap: 6px;
-    }
-
-    .phone-input-row select {
-      width: 95px;
-      background: #f8fafc;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .phone-input-row input {
-      flex: 1;
-    }
-
     .save-profile-btn {
       width: 100%;
       background: #0f172a;
@@ -360,7 +441,7 @@
       margin-top: 10px;
     }
 
-    /* Gateway Modal */
+    /* Gateway */
     .gateway-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -386,37 +467,36 @@
 </head>
 <body>
 
-  <!-- Top Navigation -->
+  <!-- Navigation -->
   <nav class="navbar">
     <a href="/" class="brand-logo">Price<span>Dekho</span></a>
     <div class="nav-actions">
       {% if current_user.is_authenticated %}
         {% set perc = current_user.completion_percentage() %}
-        
-        <!-- Profile Ring Container -->
-        <div class="profile-progress-container" onclick="openProfileModal()" title="Click to complete profile">
+        <div class="profile-progress-container" onclick="openProfileModal()" title="Edit Profile Details">
           <div class="profile-ring-wrap">
             <svg>
-              <circle cx="22" cy="22" r="18" class="profile-ring-bg"></circle>
-              <circle cx="22" cy="22" r="18" class="profile-ring-bar"
-                      stroke-dasharray="113.1"
-                      stroke-dashoffset="{{ 113.1 - (113.1 * perc / 100) }}"
+              <circle cx="21" cy="21" r="17" class="profile-ring-bg"></circle>
+              <!-- 2 * PI * 17 = 106.8 -->
+              <circle cx="21" cy="21" r="17" class="profile-ring-bar"
+                      stroke-dasharray="106.8"
+                      stroke-dashoffset="{{ 106.8 - (106.8 * perc / 100) }}"
                       style="stroke: {% if perc == 100 %}#16a34a{% else %}#2563eb{% endif %};">
               </circle>
             </svg>
             <img src="{{ current_user.profile_pic or 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}"
-                 alt="User" class="profile-avatar-inside">
+                 alt="Profile" class="profile-avatar-inside">
           </div>
           <div class="profile-status-label">
             {% if perc == 100 %}
               <span class="status-completed">✔ Completed</span>
             {% else %}
-              <span class="status-pending">{{ perc }}% Done</span>
+              <span class="status-pending">{{ perc }}%</span>
             {% endif %}
           </div>
         </div>
 
-        <div class="coin-badge">🪙 {{ current_user.coins }}</div>
+        <div class="coin-badge" id="navbarCoinBadge">🪙 {{ current_user.coins }} Coins</div>
         <a href="/logout" class="logout-link">Logout</a>
       {% else %}
         <a href="/login/google" class="google-btn" style="padding: 6px 14px; font-size: 13px;">
@@ -427,94 +507,166 @@
     </div>
   </nav>
 
-  <!-- Hero & Search -->
-  <section class="hero">
-    <h1>Find the Lowest Price</h1>
-    <p>Compare real-time product prices across top shopping stores in India.</p>
-    <form method="POST" action="/" class="search-box">
-      <input type="text" name="query" placeholder="Search for phones, laptops, shoes..." value="{{ query }}" required>
-      <button type="submit">Search</button>
-    </form>
-  </section>
+  <!-- Main Body -->
+  <div class="container">
+    
+    <!-- 1. Search Bar at Top -->
+    <section class="search-section">
+      <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Compare Products & Earn Rewards</h1>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find the guaranteed lowest price on Amazon & Flipkart.</p>
+      
+      <form method="POST" action="/" class="search-box">
+        <input type="text" name="query" placeholder="Search phones, electronics, shoes..." value="{{ query }}" required>
+        <button type="submit">Search</button>
+      </form>
+    </section>
 
-  <!-- Deals -->
-  <main class="container">
+    <!-- 2. Search Deals (If Searched) -->
     {% if deals %}
-      <div class="deals-grid">
-        {% for deal in deals %}
-          <div class="deal-card">
-            <div>
-              <span class="deal-store {% if deal.store == 'Amazon' %}store-amazon{% else %}store-flipkart{% endif %}">
-                {{ deal.store }}
-              </span>
-              <div class="deal-img-wrapper">
-                <img src="{{ deal.image }}" alt="{{ deal.title }}">
+      <div style="margin-bottom: 30px;">
+        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">Top Results for "{{ query }}"</h3>
+        <div class="deals-grid">
+          {% for deal in deals %}
+            <div class="deal-card">
+              <div>
+                <span class="deal-store {% if deal.store == 'Amazon' %}store-amazon{% else %}store-flipkart{% endif %}">
+                  {{ deal.store }}
+                </span>
+                <div class="deal-img-wrapper">
+                  <img src="{{ deal.image }}" alt="{{ deal.title }}">
+                </div>
+                <h4 class="deal-title">{{ deal.title }}</h4>
               </div>
-              <h3 class="deal-title">{{ deal.title }}</h3>
+              <div>
+                <div class="deal-price">{{ deal.price }}</div>
+                <a href="{{ deal.link }}" target="_blank" rel="noopener noreferrer" class="buy-btn">
+                  View on {{ deal.store }} →
+                </a>
+              </div>
             </div>
-            <div>
-              <div class="deal-price">{{ deal.price }}</div>
-              <a href="{{ deal.link }}" target="_blank" rel="noopener noreferrer" class="buy-btn">
-                View on {{ deal.store }} →
-              </a>
-            </div>
-          </div>
-        {% endfor %}
+          {% endfor %}
+        </div>
       </div>
-    {% elif query %}
-      <p style="text-align: center; color: #64748b; margin-top: 30px;">No deals found for "{{ query }}".</p>
     {% endif %}
-  </main>
 
-  <!-- Profile Modal with Country Code & 10 Digit Phone -->
+    <!-- 3. Logged-in User Dashboard: Earn Cards & Statement -->
+    {% if current_user.is_authenticated %}
+      
+      <!-- Side by Side Action Cards -->
+      <div class="earning-cards-grid">
+        
+        <!-- Card 1: Watch Ads and Earn Coins -->
+        <div class="earn-card">
+          <div>
+            <span class="card-badge badge-ads">📺 Daily Video Ads</span>
+            <h3 class="card-title">Watch Ads & Earn Coins</h3>
+            <p class="card-desc">Watch a short 10-second sponsor ad to earn instant coins directly to your wallet.</p>
+          </div>
+          <button type="button" class="earn-action-btn btn-ads" id="watchAdBtn" onclick="watchAd()">
+            ▶ Watch Ad (+10 Coins)
+          </button>
+        </div>
+
+        <!-- Card 2: Complete Tasks and Win Coins -->
+        <div class="earn-card">
+          <div>
+            <span class="card-badge badge-tasks">🎯 High Paying Tasks</span>
+            <h3 class="card-title">Complete Tasks & Win Coins</h3>
+            <p class="card-desc">Complete simple tasks like exploring trending stores, surveys, and app downloads.</p>
+          </div>
+          <button type="button" class="earn-action-btn btn-tasks" onclick="openTasksModal()">
+            ⚡ Explore Tasks (Win Up to 100 Coins)
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Total Earning Statement (Passbook Table) -->
+      <div class="statement-card">
+        <div class="statement-header">
+          <div>
+            <h3 class="statement-title">📊 Total Earning Statement</h3>
+            <p style="font-size: 12px; color: #64748b; margin-top: 2px;">Your real-time wallet history & coin credits</p>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a;">🪙 {{ current_user.coins }}</div>
+            <div style="font-size: 11px; color: #16a34a; font-weight: 700;">≈ ₹{{ current_user.coins / 10 }} Cash Value</div>
+          </div>
+        </div>
+
+        <table class="statement-table">
+          <thead>
+            <tr>
+              <th>Description / Activity</th>
+              <th>Date & Time</th>
+              <th style="text-align: right;">Status</th>
+            </tr>
+          </thead>
+          <tbody id="statementTableBody">
+            {% if history %}
+              {% for item in history %}
+                <tr>
+                  <td><strong>{{ item.title }}</strong></td>
+                  <td style="color: #64748b;">{{ item.timestamp.strftime('%d %b, %I:%M %p') }}</td>
+                  <td style="text-align: right;"><span class="credit-coins">+{{ item.coins }} Coins</span></td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" style="text-align: center; color: #94a3b8; padding: 18px;">No transaction history yet. Watch ads or search to start earning!</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+  <!-- Profile Modal (5 Boxes) -->
   {% if current_user.is_authenticated %}
   <div id="profileModal" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-header">
-        <h2>Profile & Bank Verification</h2>
+        <h2 style="font-size: 17px; font-weight: 800;">My Account & KYC Details</h2>
         <button class="close-btn" onclick="closeProfileModal()">&times;</button>
       </div>
 
-      <div class="score-banner">
-        <span>Profile Completion Score:</span>
+      <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:10px 14px; margin-bottom:16px; font-size:12px; color:#1e40af; display:flex; justify-content:space-between;">
+        <span>Profile Completion:</span>
         <strong>{{ current_user.completion_percentage() }}% / 100%</strong>
       </div>
 
       <form method="POST" action="/profile/update">
-        <!-- 1. Profile Picture -->
         <div class="form-group">
-          <label>1. Profile Picture URL</label>
+          <label>1. Profile Photo URL</label>
           <input type="url" name="profile_pic" placeholder="https://example.com/photo.jpg" value="{{ current_user.profile_pic or '' }}">
         </div>
 
-        <!-- 2. Full Name -->
         <div class="form-group">
           <label>2. Full Name</label>
           <input type="text" name="name" value="{{ current_user.name }}" required>
         </div>
 
-        <!-- 3. Mobile Number (Country Code + 10 Digits) -->
         <div class="form-group">
           <label>3. Mobile Number</label>
-          <div class="phone-input-row">
-            <select name="country_code">
+          <div style="display: flex; gap: 6px;">
+            <select name="country_code" style="width: 95px;">
               <option value="+91" {% if current_user.country_code == '+91' or not current_user.country_code %}selected{% endif %}>🇮🇳 +91</option>
               <option value="+1" {% if current_user.country_code == '+1' %}selected{% endif %}>🇺🇸 +1</option>
               <option value="+44" {% if current_user.country_code == '+44' %}selected{% endif %}>🇬🇧 +44</option>
               <option value="+971" {% if current_user.country_code == '+971' %}selected{% endif %}>🇦🇪 +971</option>
-              <option value="+65" {% if current_user.country_code == '+65' %}selected{% endif %}>🇸🇬 +65</option>
             </select>
-            <input type="tel" name="phone" maxlength="10" placeholder="10-digit mobile number" value="{{ current_user.phone or '' }}">
+            <input type="tel" name="phone" maxlength="10" placeholder="10-digit number" value="{{ current_user.phone or '' }}" style="flex:1;">
           </div>
         </div>
 
-        <!-- 4. UPI ID -->
         <div class="form-group">
-          <label>4. UPI ID (For Instant Cash Redeem)</label>
-          <input type="text" name="upi_id" placeholder="e.g. yourname@upi" value="{{ current_user.upi_id or '' }}">
+          <label>4. UPI ID (For Direct Bank/Cash Redeem)</label>
+          <input type="text" name="upi_id" placeholder="yourname@paytm / okaxis" value="{{ current_user.upi_id or '' }}">
         </div>
 
-        <!-- 5. Bank Account & IFSC -->
         <div style="display: flex; gap: 8px;">
           <div class="form-group" style="flex: 2;">
             <label>5. Bank A/C Number</label>
@@ -530,6 +682,42 @@
       </form>
     </div>
   </div>
+
+  <!-- Tasks Modal -->
+  <div id="tasksModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 style="font-size: 17px; font-weight: 800;">🎯 Daily Tasks & Offers</h2>
+        <button class="close-btn" onclick="closeTasksModal()">&times;</button>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700;">Complete 100% Profile</div>
+            <div style="font-size: 11px; color: #64748b;">Fill photo, phone, UPI & bank details</div>
+          </div>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Profile KYC Verification', 50)">+50 Coins</button>
+        </div>
+
+        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700;">Install Sponsor App</div>
+            <div style="font-size: 11px; color: #64748b;">Download and open partner shopping app</div>
+          </div>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('Sponsor App Download', 30)">+30 Coins</button>
+        </div>
+
+        <div style="border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700;">Share PriceDekho to WhatsApp</div>
+            <div style="font-size: 11px; color: #64748b;">Share with 3 friends or groups</div>
+          </div>
+          <button class="earn-action-btn btn-tasks" style="width: auto; padding: 6px 12px;" onclick="claimTaskReward('WhatsApp Refer & Share', 20)">+20 Coins</button>
+        </div>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
   <!-- Guest Gateway Modal -->
@@ -538,7 +726,7 @@
     <div class="gateway-card">
       <div style="background:#fef3c7; color:#b45309; font-size:12px; font-weight:700; padding:4px 10px; border-radius:20px; display:inline-block; margin-bottom:12px;">🪙 Free 50 Welcome Coins</div>
       <h2 style="font-size:20px; font-weight:800; margin-bottom:8px;">Welcome to Price<span style="color:#2563eb;">Dekho</span></h2>
-      <p style="font-size:13px; color:#64748b; margin-bottom:20px;">Compare prices freely or sign in with Google to earn cashback and coins.</p>
+      <p style="font-size:13px; color:#64748b; margin-bottom:20px;">Compare prices freely or sign in with Google to start earning coins and real money.</p>
       <a href="/login/google" class="google-btn">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 18px; height: 18px;">
         Continue with Google
@@ -560,6 +748,16 @@
       if (modal) modal.style.display = 'none';
     }
 
+    function openTasksModal() {
+      const modal = document.getElementById('tasksModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeTasksModal() {
+      const modal = document.getElementById('tasksModal');
+      if (modal) modal.style.display = 'none';
+    }
+
     function dismissGateway() {
       const modal = document.getElementById('authGatewayModal');
       if (modal) modal.style.display = 'none';
@@ -569,6 +767,45 @@
     if (sessionStorage.getItem('skipAuth') === 'true') {
       const modal = document.getElementById('authGatewayModal');
       if (modal) modal.style.display = 'none';
+    }
+
+    // Watch Ad Simulation
+    async function watchAd() {
+      const btn = document.getElementById('watchAdBtn');
+      btn.disabled = true;
+      let seconds = 5;
+      btn.innerText = `⏳ Playing Ad... (${seconds}s)`;
+      
+      const timer = setInterval(async () => {
+        seconds--;
+        if (seconds > 0) {
+          btn.innerText = `⏳ Playing Ad... (${seconds}s)`;
+        } else {
+          clearInterval(timer);
+          btn.innerText = 'Claiming Coins...';
+          
+          const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            alert(`🎉 Congratulations! You received +${data.reward} Coins!`);
+            window.location.reload();
+          }
+        }
+      }, 1000);
+    }
+
+    // Complete Task Reward
+    async function claimTaskReward(taskName, rewardCoins) {
+      const res = await fetch('/api/complete-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task_name: taskName, reward: rewardCoins })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`🎉 Task Completed! Received +${data.reward} Coins.`);
+        window.location.reload();
+      }
     }
   </script>
 </body>
