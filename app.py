@@ -1,7 +1,8 @@
 import os
+import time
 import requests
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -62,15 +63,15 @@ class Transaction(db.Model):
     coins = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Payout Request Model (₹50 Minimum Payout)
+# Payout Request Model
 class PayoutRequest(db.Model):
     __tablename__ = 'payout_request'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     amount_inr = db.Column(db.Integer, default=50)
     coins_deducted = db.Column(db.Integer, default=500)
-    payment_method = db.Column(db.String(100), nullable=False) # e.g. UPI or Bank
-    status = db.Column(db.String(20), default="Pending") # Pending, Completed, Rejected
+    payment_method = db.Column(db.String(100), nullable=False)
+    status = db.Column(db.String(20), default="Pending")
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
 
@@ -137,6 +138,26 @@ CATALOG = [
     }
 ]
 
+# Real Sponsor Ads Inventory (Change or toggle active state anytime)
+ACTIVE_ADS_INVENTORY = [
+    {
+        "id": "ad_101",
+        "sponsor": "Amazon Great Indian Festival",
+        "title": "Save Up to 70% on Top Laptops & Electronics!",
+        "image": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600",
+        "link": "https://www.amazon.in",
+        "duration": 10
+    },
+    {
+        "id": "ad_102",
+        "sponsor": "Flipkart Big Billion Days",
+        "title": "Crazy Deals on Smartphone Brands - Grab Now!",
+        "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
+        "link": "https://www.flipkart.com",
+        "duration": 10
+    }
+]
+
 def search_products(query):
     deals = []
     q = query.lower()
@@ -186,9 +207,7 @@ def home():
     if current_user.is_authenticated:
         try:
             history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
-            # Pending Payout Check
             pending_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").order_by(PayoutRequest.timestamp.desc()).first()
-            # Last Successful Payment Check
             last_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Completed").order_by(PayoutRequest.completed_at.desc()).first()
         except Exception:
             db.session.rollback()
@@ -209,15 +228,43 @@ def home():
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
-# API: Watch Ad
+# 1. API: Check and Load Available Ad
+@app.route('/api/load-ad', methods=['GET'])
+@login_required
+def load_ad():
+    # Check if inventory has ads
+    if not ACTIVE_ADS_INVENTORY:
+        return jsonify({"available": False, "message": "⚠️ Ads not available right now. Please try again later!"})
+    
+    # Pick next ad
+    ad = ACTIVE_ADS_INVENTORY[0]
+    # Set session watch timestamp to prevent cheat
+    session['ad_start_time'] = time.time()
+    session['ad_id'] = ad['id']
+    return jsonify({
+        "available": True,
+        "ad": ad
+    })
+
+# 2. API: Claim Reward ONLY After Ad Completion Verified
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
+    start_time = session.get('ad_start_time')
+    if not start_time:
+        return jsonify({"success": False, "message": "Ad session expired or not started!"}), 400
+
+    elapsed = time.time() - start_time
+    # Must watch minimum 10 seconds (strict anti-cheat)
+    if elapsed < 9.5:
+        return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins tabhi milenge jab ad full complete hogi."}), 400
+
     try:
         current_user.coins += 10
-        tx = Transaction(user_id=current_user.id, title="Watched Video / Sponsor Ad", coins=10)
+        tx = Transaction(user_id=current_user.id, title="Watched Sponsor Video Ad", coins=10)
         db.session.add(tx)
         db.session.commit()
+        session.pop('ad_start_time', None)
         return jsonify({"success": True, "coins": current_user.coins, "reward": 10})
     except Exception as e:
         db.session.rollback()
@@ -241,27 +288,23 @@ def complete_task():
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Request Payout (₹50 Minimum Rule: 500 Coins = ₹50)
+# API: Request Payout
 @app.route('/api/request-payout', methods=['POST'])
 @login_required
 def request_payout():
     try:
-        # Check if already has a pending request
         existing = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").first()
         if existing:
             return jsonify({"success": False, "message": "Aapki pichli ₹50 payout request already Pending/Processing me hai!"}), 400
 
-        # Check Minimum Coins requirement: 500 coins = ₹50
         if current_user.coins < 500:
             remaining = 500 - current_user.coins
             return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 500 coins chahiye. Aapko aur {remaining} coins earn karne honge!"}), 400
 
-        # Check Payment Method Added
         p_method = current_user.upi_id if current_user.upi_id else f"{current_user.bank_account} ({current_user.bank_ifsc})"
         if not current_user.upi_id and not current_user.bank_account:
             return jsonify({"success": False, "message": "Kripya payout lene se pehle apni profile me UPI ID ya Bank details add karein!"}), 400
 
-        # Deduct 500 Coins and create Payout Request
         current_user.coins -= 500
         req = PayoutRequest(user_id=current_user.id, amount_inr=50, coins_deducted=500, payment_method=p_method, status="Pending")
         tx = Transaction(user_id=current_user.id, title="Payout Request Submitted (₹50)", coins=-500)
@@ -361,14 +404,13 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-# Admin Dashboard with Payout Management
+# Admin Dashboard
 @app.route('/admin/users')
 def view_users():
     secret_key = request.args.get('key')
     if secret_key != "pricedekho_admin_99":
         return "Access Denied: Invalid Key", 403
 
-    # Handle Admin Payout Approval Action: /admin/users?key=pricedekho_admin_99&approve_payout=1
     approve_id = request.args.get('approve_payout')
     if approve_id:
         p_req = PayoutRequest.query.get(int(approve_id))
