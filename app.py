@@ -1,15 +1,22 @@
 import os
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    login_required,
+    logout_user,
+    current_user
+)
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
 
-# Import scraper function
+# Scraper module import
 from scraper import fetch_all_deals
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'pricedekho-master-key-2026'
+app.config['SECRET_KEY'] = 'pricedekho-master-secret-key-2026'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pricedekho.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -18,7 +25,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# --- MODELS ---
+# --- DATABASE MODELS ---
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,6 +49,7 @@ class PayoutRequest(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# DB table creation
 with app.app_context():
     db.create_all()
 
@@ -98,4 +106,5 @@ def logout():
     return redirect(url_for('home'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
