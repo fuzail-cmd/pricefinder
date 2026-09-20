@@ -50,6 +50,22 @@
       gap: 12px;
     }
 
+    .user-profile-box {
+      text-align: right;
+      line-height: 1.2;
+    }
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .user-email {
+      font-size: 11px;
+      color: #64748b;
+    }
+
     .coin-badge {
       background: #fef3c7;
       color: #b45309;
@@ -67,6 +83,31 @@
       color: #ef4444;
       text-decoration: none;
       font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .logout-link:hover {
+      background: #fee2e2;
+    }
+
+    .google-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      text-decoration: none;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .google-nav-btn:hover {
+      background: #f1f5f9;
     }
 
     /* Hero & Search */
@@ -122,7 +163,7 @@
       background: #1d4ed8;
     }
 
-    /* Container & Deals Grid */
+    /* Deals Grid */
     .container {
       max-width: 1000px;
       margin: 0 auto;
@@ -230,111 +271,47 @@
     /* Gateway Modal */
     .gateway-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(15, 23, 42, 0.75);
       backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px; z-index: 99999;
     }
 
     .gateway-card {
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 24px 20px;
-      max-width: 380px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+      background: #ffffff; border-radius: 16px;
+      padding: 24px 20px; max-width: 380px; width: 100%;
+      text-align: center; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
     }
 
     .gateway-badge {
-      display: inline-block;
-      background: #fef3c7;
-      color: #b45309;
-      font-size: 12px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 20px;
-      margin-bottom: 12px;
+      display: inline-block; background: #fef3c7; color: #b45309;
+      font-size: 12px; font-weight: 700; padding: 4px 10px;
+      border-radius: 20px; margin-bottom: 12px;
     }
 
-    .gateway-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: #0f172a;
-      margin-bottom: 8px;
-    }
-
-    .gateway-title span {
-      color: #2563eb;
-    }
-
-    .gateway-subtitle {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
+    .gateway-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    .gateway-title span { color: #2563eb; }
+    .gateway-subtitle { font-size: 13px; color: #64748b; margin-bottom: 20px; line-height: 1.4; }
 
     .google-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: #ffffff;
-      border: 1.5px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 11px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #1e293b;
-      text-decoration: none;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px;
+      padding: 11px; font-size: 14px; font-weight: 600; color: #1e293b;
+      text-decoration: none; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
-    .google-btn img {
-      width: 18px;
-      height: 18px;
-    }
+    .google-btn img { width: 18px; height: 18px; }
 
-    .gateway-divider {
-      position: relative;
-      text-align: center;
-      margin: 18px 0;
-    }
-
+    .gateway-divider { position: relative; text-align: center; margin: 18px 0; }
     .gateway-divider:before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 0;
-      width: 100%;
-      height: 1px;
-      background: #e2e8f0;
+      content: ""; position: absolute; top: 50%; left: 0; width: 100%; height: 1px; background: #e2e8f0;
     }
-
-    .gateway-divider span {
-      background: #ffffff;
-      padding: 0 8px;
-      font-size: 11px;
-      color: #94a3b8;
-      position: relative;
-    }
+    .gateway-divider span { background: #ffffff; padding: 0 8px; font-size: 11px; color: #94a3b8; position: relative; }
 
     .skip-btn {
-      background: transparent;
-      border: none;
-      color: #2563eb;
-      font-size: 13px;
-      font-weight: 700;
-      cursor: pointer;
-      text-decoration: underline;
+      background: transparent; border: none; color: #2563eb;
+      font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: underline;
     }
   </style>
 </head>
@@ -345,15 +322,23 @@
     <a href="/" class="brand-logo">Price<span>Dekho</span></a>
     <div class="nav-actions">
       {% if current_user.is_authenticated %}
+        <!-- Logged-in user information -->
+        <div class="user-profile-box">
+          <div class="user-name">👤 {{ current_user.name }}</div>
+          <div class="user-email">{{ current_user.email }}</div>
+        </div>
         <div class="coin-badge">🪙 {{ current_user.coins }} Coins</div>
         <a href="/logout" class="logout-link">Logout</a>
       {% else %}
-        <a href="/login/google" style="text-decoration: none; font-size: 13px; font-weight: 600; color: #2563eb;">Sign In</a>
+        <a href="/login/google" class="google-nav-btn">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 14px; height: 14px;">
+          Sign In
+        </a>
       {% endif %}
     </div>
   </nav>
 
-  <!-- Hero & Search Form -->
+  <!-- Hero & Search -->
   <section class="hero">
     <h1>Find the Lowest Price</h1>
     <p>Compare real-time product prices across top shopping stores in India.</p>
@@ -363,7 +348,7 @@
     </form>
   </section>
 
-  <!-- Main Deals Grid -->
+  <!-- Deals Section -->
   <main class="container">
     {% if deals %}
       <div class="deals-grid">
@@ -392,7 +377,7 @@
     {% endif %}
   </main>
 
-  <!-- Login Gateway Modal (Only shows for non-logged-in users) -->
+  <!-- Gateway Modal -->
   {% if not current_user.is_authenticated %}
   <div id="authGatewayModal" class="gateway-overlay">
     <div class="gateway-card">
@@ -402,7 +387,6 @@
         Compare prices freely across Amazon & Flipkart, or sign in with Google to start earning coins and cashback.
       </p>
 
-      <!-- Google Auth Button -->
       <a href="/login/google" class="google-btn">
         <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
         Continue with Google
@@ -410,7 +394,6 @@
 
       <div class="gateway-divider"><span>OR</span></div>
 
-      <!-- Skip Button -->
       <button type="button" onclick="dismissGateway()" class="skip-btn">
         Skip for Now (Explore Deals Only) →
       </button>
@@ -427,7 +410,6 @@
       sessionStorage.setItem('skipAuth', 'true');
     }
 
-    // Modal check on page reload
     if (sessionStorage.getItem('skipAuth') === 'true') {
       const modal = document.getElementById('authGatewayModal');
       if (modal) {
