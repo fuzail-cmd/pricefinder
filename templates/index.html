@@ -2,58 +2,349 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PriceDekho</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>PriceDekho - Price Comparison Engine</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f1f5f9; padding: 15px; }
-    .header { text-align: center; margin-bottom: 20px; }
-    .header h1 { color: #2563eb; }
-    .search-box { display: flex; max-width: 500px; margin: 0 auto 20px auto; gap: 8px; }
-    .search-box input { flex: 1; padding: 12px; font-size: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
-    .search-box button { padding: 12px 20px; background: #2563eb; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width: 900px; margin: 0 auto; }
-    @media(min-width: 768px) { .grid { grid-template-columns: repeat(4, 1fr); } }
-    .card { background: #fff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; }
-    .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 8px; }
-    .card h4 { font-size: 13px; margin-bottom: 6px; color: #1e293b; height: 36px; overflow: hidden; }
-    .card .store { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
-    .card .price { font-size: 14px; font-weight: bold; color: #16a34a; margin-bottom: 10px; }
-    .card a { display: block; text-align: center; background: #f59e0b; color: #111; text-decoration: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 12px; }
-    .card.flipkart a { background: #2563eb; color: #fff; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+
+    /* Top Live Notice Bar */
+    .top-notice {
+      background: #020617;
+      color: #cbd5e1;
+      font-size: 11px;
+      padding: 8px 12px;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Hero Banner */
+    .hero-section {
+      background: linear-gradient(180deg, #0b132b 0%, #1c2541 100%);
+      color: #ffffff;
+      text-align: center;
+      padding: 24px 16px 36px 16px;
+    }
+
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .brand-title span {
+      color: #38bdf8;
+    }
+
+    .hero-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      max-width: 320px;
+      margin: 0 auto 14px auto;
+      line-height: 1.4;
+    }
+
+    .badges-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      font-size: 11px;
+      color: #cbd5e1;
+      flex-wrap: wrap;
+    }
+
+    /* Search Box Wrapper */
+    .search-card-wrapper {
+      max-width: 500px;
+      margin: -20px 16px 16px 16px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e2e8f0;
+      position: relative;
+      z-index: 10;
+    }
+
+    @media (min-width: 540px) {
+      .search-card-wrapper {
+        margin: -20px auto 16px auto;
+      }
+    }
+
+    .search-form {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      padding: 12px 14px;
+      font-size: 15px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      outline: none;
+    }
+
+    .search-btn {
+      padding: 12px 16px;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    /* Quick Tags */
+    .tags-container {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      margin-top: 12px;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .tags-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .tag-btn {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    /* Main Content Area */
+    .content-area {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 16px 40px 16px;
+    }
+
+    .result-header {
+      font-size: 15px;
+      font-weight: 700;
+      margin: 16px 0 12px 0;
+      color: #1e293b;
+    }
+
+    /* Deals Product Cards List */
+    .deals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .deal-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+    }
+
+    .deal-img-box {
+      width: 85px;
+      height: 85px;
+      min-width: 85px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f8fafc;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .deal-img-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .deal-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .store-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
+    .store-badge.amazon {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .store-badge.flipkart {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .deal-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 6px;
+      line-height: 1.3;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .deal-price {
+      font-size: 15px;
+      font-weight: 800;
+      color: #16a34a;
+    }
+
+    .visit-btn {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .visit-btn.amazon {
+      background: #f59e0b;
+      color: #0f172a;
+    }
+
+    .visit-btn.flipkart {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #94a3b8;
+      padding: 24px 16px;
+      border-top: 1px solid #f1f5f9;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
 
-  <div class="header">
-    <h1>Price<span>Dekho</span></h1>
+  <!-- Notice -->
+  <div class="top-notice">
+    <span class="dot"></span>
+    PriceDekho Live: Sabhi top online stores ke authentic prices & direct deals track ho rahe hain!
   </div>
 
-  <form action="/" method="GET" class="search-box">
-    <input type="text" name="q" value="{{ query }}" placeholder="Search mobile, earphones..." required>
-    <button type="submit">Search</button>
-  </form>
-
-  {% if deals %}
-    <h3 style="max-width: 900px; margin: 0 auto 12px auto; font-size: 15px;">Deals for "{{ query }}":</h3>
-    <div class="grid">
-      {% for deal in deals %}
-        <div class="card {% if deal.store == 'Flipkart' %}flipkart{% endif %}">
-          <div>
-            <div class="store">{{ deal.store }}</div>
-            <img src="{{ deal.image }}" alt="{{ deal.title }}">
-            <h4>{{ deal.title }}</h4>
-            <div class="price">{{ deal.price_raw }}</div>
-          </div>
-          <a href="{{ deal.affiliate_url }}" target="_blank" rel="noopener noreferrer">
-            Buy on {{ deal.store }}
-          </a>
-        </div>
-      {% endfor %}
+  <!-- Hero Header -->
+  <div class="hero-section">
+    <div class="brand-title">🔍 Price<span>Dekho</span></div>
+    <div class="hero-sub">India's Smart Live Mobile Price & Specs Comparison Engine</div>
+    <div class="badges-row">
+      <span>⚡ 7+ Top Stores</span>
+      <span>📊 Live Price Tracker</span>
+      <span>🛡️ Verified Genuine Deals</span>
     </div>
-  {% elif query %}
-    <p style="text-align: center; color: #64748b;">No results found.</p>
-  {% endif %}
+  </div>
+
+  <!-- Search Card -->
+  <div class="search-card-wrapper">
+    <form action="/" method="GET" class="search-form">
+      <input 
+        type="text" 
+        name="q" 
+        class="search-input" 
+        value="{{ query }}" 
+        placeholder="Apple iPhone 16, Redmi..." 
+        required
+      >
+      <button type="submit" class="search-btn">Compare Prices</button>
+    </form>
+
+    <!-- Quick Filter Tags -->
+    <div class="tags-container">
+      <a href="/?q=iPhone+16" class="tag-btn">📱 iPhone 16</a>
+      <a href="/?q=Samsung+S25+Ultra" class="tag-btn">📱 Samsung S25 Ultra</a>
+      <a href="/?q=OnePlus+13" class="tag-btn">📱 OnePlus 13</a>
+      <a href="/?q=Mobile+Under+15000" class="tag-btn">💰 Under ₹15,000</a>
+      <a href="/?q=Mobile+Under+25000" class="tag-btn">💰 Under ₹25,000</a>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class="content-area">
+    {% if query %}
+      <div class="result-header">
+        Showing comparisons for: "<strong>{{ query }}</strong>"
+      </div>
+
+      <!-- Yahan cards guaranteed load honge -->
+      <div class="deals-list">
+        {% for deal in deals %}
+          <div class="deal-card">
+            <div class="deal-img-box">
+              <img src="{{ deal.image }}" alt="{{ deal.title }}">
+            </div>
+            <div class="deal-info">
+              <span class="store-badge {{ deal.store|lower }}">{{ deal.store }}</span>
+              <div class="deal-title">{{ deal.title }}</div>
+              <div class="deal-price">{{ deal.price_raw }}</div>
+            </div>
+            <a href="{{ deal.affiliate_url }}" target="_blank" rel="noopener noreferrer" class="visit-btn {{ deal.store|lower }}">
+              Buy on {{ deal.store }}
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="footer">
+    PriceDekho India — Direct Multi-Store Price Comparison Portal.<br>
+    Amazon and the Amazon logo are trademarks of Amazon.com, Inc. or its affiliates. Prices update regularly.
+  </div>
 
 </body>
 </html>
