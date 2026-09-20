@@ -11,10 +11,11 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_session_key_2026")
+app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_production_secret_2026")
 
-# Database Setup
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pricedekho.db'
+# Database Setup (Render safe path)
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pricedekho.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -23,10 +24,11 @@ login_manager.login_view = 'home'
 
 # User Model
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
+    password = db.Column(db.String(200), nullable=False, default="SECURE_OAUTH_PASS")
     profile_pic = db.Column(db.String(500), nullable=True, default="")
     coins = db.Column(db.Integer, default=50)
     country_code = db.Column(db.String(10), nullable=True, default="+91")
@@ -34,6 +36,7 @@ class User(UserMixin, db.Model):
     upi_id = db.Column(db.String(100), nullable=True, default="")
     bank_account = db.Column(db.String(50), nullable=True, default="")
     bank_ifsc = db.Column(db.String(30), nullable=True, default="")
+    transactions = db.relationship('Transaction', backref='user', lazy=True, cascade="all, delete-orphan")
 
     def completion_percentage(self):
         score = 0
@@ -51,6 +54,7 @@ class User(UserMixin, db.Model):
 
 # Earning History / Statement Model
 class Transaction(db.Model):
+    __tablename__ = 'transaction'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title = db.Column(db.String(200), nullable=False)
@@ -71,7 +75,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'},
 )
 
-# Products Catalog
+# Product Catalog
 CATALOG = [
     {
         "keywords": ["iphone 15", "iphone15", "apple iphone 15"],
@@ -165,68 +169,93 @@ def home():
     history = []
 
     if current_user.is_authenticated:
-        history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(10).all()
+        try:
+            history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
+        except Exception:
+            db.session.rollback()
+            history = []
 
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         if query:
             deals = search_products(query)
             if current_user.is_authenticated:
-                current_user.coins += 5
-                tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=5)
-                db.session.add(tx)
-                db.session.commit()
-                history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(10).all()
+                try:
+                    current_user.coins += 5
+                    tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=5)
+                    db.session.add(tx)
+                    db.session.commit()
+                    history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
+                except Exception as e:
+                    db.session.rollback()
+                    print("Transaction Error:", e)
 
     return render_template('index.html', deals=deals, query=query, history=history)
 
-# API: Watch Ad and Claim Coins
+# API: Watch Ad Reward
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
-    current_user.coins += 10
-    tx = Transaction(user_id=current_user.id, title="Watched Video / Ad Bonus", coins=10)
-    db.session.add(tx)
-    db.session.commit()
-    return jsonify({"success": True, "coins": current_user.coins, "reward": 10})
+    try:
+        current_user.coins += 10
+        tx = Transaction(user_id=current_user.id, title="Watched Video / Sponsor Ad", coins=10)
+        db.session.add(tx)
+        db.session.commit()
+        return jsonify({"success": True, "coins": current_user.coins, "reward": 10})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Complete Task and Win Coins
+# API: Complete Task Reward
 @app.route('/api/complete-task', methods=['POST'])
 @login_required
 def complete_task():
-    data = request.get_json() or {}
-    task_name = data.get('task_name', 'Task Bonus')
-    reward_coins = int(data.get('reward', 25))
+    try:
+        data = request.get_json() or {}
+        task_name = data.get('task_name', 'Task Bonus')
+        reward_coins = int(data.get('reward', 25))
 
-    current_user.coins += reward_coins
-    tx = Transaction(user_id=current_user.id, title=f"Completed Task: {task_name}", coins=reward_coins)
-    db.session.add(tx)
-    db.session.commit()
-    return jsonify({"success": True, "coins": current_user.coins, "reward": reward_coins})
+        current_user.coins += reward_coins
+        tx = Transaction(user_id=current_user.id, title=f"Completed Task: {task_name}", coins=reward_coins)
+        db.session.add(tx)
+        db.session.commit()
+        return jsonify({"success": True, "coins": current_user.coins, "reward": reward_coins})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
 
-# Profile Update Route
+# Profile Update Route (Save 5 Fields with Direct DB Commit)
 @app.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
-    name = request.form.get('name', '').strip()
-    profile_pic = request.form.get('profile_pic', '').strip()
-    country_code = request.form.get('country_code', '+91').strip()
-    phone = request.form.get('phone', '').strip()
-    upi_id = request.form.get('upi_id', '').strip()
-    bank_account = request.form.get('bank_account', '').strip()
-    bank_ifsc = request.form.get('bank_ifsc', '').strip()
+    try:
+        name = request.form.get('name', '').strip()
+        profile_pic = request.form.get('profile_pic', '').strip()
+        country_code = request.form.get('country_code', '+91').strip()
+        phone = request.form.get('phone', '').strip()
+        upi_id = request.form.get('upi_id', '').strip()
+        bank_account = request.form.get('bank_account', '').strip()
+        bank_ifsc = request.form.get('bank_ifsc', '').strip()
 
-    if name:
-        current_user.name = name
-    if profile_pic:
-        current_user.profile_pic = profile_pic
-    current_user.country_code = country_code
-    current_user.phone = phone
-    current_user.upi_id = upi_id
-    current_user.bank_account = bank_account
-    current_user.bank_ifsc = bank_ifsc
+        if name:
+            current_user.name = name
+        if profile_pic:
+            current_user.profile_pic = profile_pic
+        current_user.country_code = country_code
+        current_user.phone = phone
+        current_user.upi_id = upi_id
+        current_user.bank_account = bank_account
+        current_user.bank_ifsc = bank_ifsc
 
-    db.session.commit()
+        # Save record of profile update
+        tx = Transaction(user_id=current_user.id, title="Profile Details Saved & Synced", coins=0)
+        db.session.add(tx)
+        db.session.commit()
+        print(f"--> [PROFILE SAVED] {current_user.name} | Phone: {current_user.phone} | UPI: {current_user.upi_id}")
+    except Exception as e:
+        db.session.rollback()
+        print("Profile Save Error:", e)
+
     return redirect(url_for('home'))
 
 @app.route('/login')
@@ -263,6 +292,7 @@ def google_authorize():
             )
             db.session.add(user)
             db.session.commit()
+            
             # Welcome Bonus Entry
             welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus", coins=50)
             db.session.add(welcome_tx)
@@ -354,8 +384,28 @@ def view_users():
     """
     return html
 
+# Automatic Database Migration / Column Injection
 with app.app_context():
     db.create_all()
+    try:
+        # SQLite schema auto-repair (add columns if missing without data wipe)
+        with db.engine.connect() as conn:
+            from sqlalchemy import text
+            for col, col_type in [
+                ("country_code", "VARCHAR(10) DEFAULT '+91'"),
+                ("phone", "VARCHAR(20) DEFAULT ''"),
+                ("upi_id", "VARCHAR(100) DEFAULT ''"),
+                ("bank_account", "VARCHAR(50) DEFAULT ''"),
+                ("bank_ifsc", "VARCHAR(30) DEFAULT ''"),
+                ("profile_pic", "VARCHAR(500) DEFAULT ''")
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {col_type};"))
+                    conn.commit()
+                except Exception:
+                    pass
+    except Exception as e:
+        print("Schema sync check:", e)
 
 if __name__ == '__main__':
     app.run(debug=True)
