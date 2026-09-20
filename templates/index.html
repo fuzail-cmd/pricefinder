@@ -502,6 +502,58 @@
       margin-top: 10px;
     }
 
+    /* Genuine Video/Ad Player Modal */
+    .ad-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .ad-timer-badge {
+      background: #ef4444;
+      color: white;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .ad-media-box {
+      width: 100%;
+      height: 200px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 14px;
+      position: relative;
+      background: #0f172a;
+    }
+
+    .ad-media-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .claim-ad-btn {
+      width: 100%;
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: none;
+    }
+
     /* Gateway */
     .gateway-overlay {
       position: fixed;
@@ -612,17 +664,14 @@
     <!-- 3. Logged-in User Dashboard -->
     {% if current_user.is_authenticated %}
       
-      <!-- Wallet Financial Status Cards (Balance, Pending, Last Payment) -->
+      <!-- Wallet Financial Status Cards -->
       <div class="wallet-status-grid">
-        
-        <!-- 1. Available Balance Status -->
         <div class="wallet-card">
           <div class="wallet-card-header">💰 Available Balance</div>
           <div class="wallet-card-val">₹{{ current_user.coins / 10 }}</div>
           <div class="wallet-card-sub" style="color: #2563eb; font-weight: 600;">🪙 {{ current_user.coins }} Coins (10 Coins = ₹1)</div>
         </div>
 
-        <!-- 2. Pending Payment Status -->
         <div class="wallet-card">
           <div class="wallet-card-header">⏳ Pending Payment Status</div>
           {% if pending_payout %}
@@ -634,7 +683,6 @@
           {% endif %}
         </div>
 
-        <!-- 3. Last Payment Status -->
         <div class="wallet-card">
           <div class="wallet-card-header">✅ Last Payment Status</div>
           {% if last_payout %}
@@ -645,7 +693,6 @@
             <div class="wallet-card-sub" style="color: #64748b;">Reach ₹50 to request payout</div>
           {% endif %}
         </div>
-
       </div>
 
       <!-- Minimum Payout Rule Banner (₹50 = 500 Coins) -->
@@ -679,9 +726,9 @@
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
             <h3 class="card-title">Watch Ads & Earn Coins</h3>
-            <p class="card-desc">Watch a short 5-second sponsor ad to earn instant coins directly to your wallet.</p>
+            <p class="card-desc">Watch full 10-second sponsor ad to earn instant 10 coins. (Zero skip allowed).</p>
           </div>
-          <button type="button" class="earn-action-btn btn-ads" id="watchAdBtn" onclick="watchAd()">
+          <button type="button" class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdFlow()">
             ▶ Watch Ad (+10 Coins)
           </button>
         </div>
@@ -747,6 +794,26 @@
 
     {% endif %}
 
+  </div>
+
+  <!-- Real Sponsor Ad Player Modal -->
+  <div id="adPlayerModal" class="modal-overlay">
+    <div class="ad-card">
+      <div id="adTimerBadge" class="ad-timer-badge">⏳ Ad Playing: 10s remaining (Do not close)</div>
+      
+      <div class="ad-media-box">
+        <img id="adImage" src="" alt="Sponsor Ad">
+      </div>
+
+      <div style="text-align: left; margin-bottom: 16px;">
+        <span id="adSponsorName" style="font-size: 11px; font-weight: 700; color: #2563eb; text-transform: uppercase;"></span>
+        <h4 id="adTitle" style="font-size: 15px; font-weight: 800; margin-top: 4px; color: #0f172a;"></h4>
+      </div>
+
+      <button type="button" id="claimRewardBtn" class="claim-ad-btn" onclick="claimFinishedAdReward()">
+        🎉 Claim +10 Coins Now
+      </button>
+    </div>
   </div>
 
   <!-- Profile Modal -->
@@ -911,35 +978,79 @@
       }
     }
 
-    // Watch Ad Handler
-    async function watchAd() {
-      const btn = document.getElementById('watchAdBtn');
+    // Real Ad Player & Anti-Cheat Logic
+    async function startAdFlow() {
+      const btn = document.getElementById('startAdBtn');
+      btn.innerText = "Checking Ads...";
       btn.disabled = true;
-      let seconds = 5;
-      btn.innerText = `⏳ Playing Ad... (${seconds}s)`;
-      
-      const timer = setInterval(async () => {
-        seconds--;
-        if (seconds > 0) {
-          btn.innerText = `⏳ Playing Ad... (${seconds}s)`;
-        } else {
-          clearInterval(timer);
-          btn.innerText = 'Claiming Coins...';
-          
-          try {
-            const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) {
-              alert(`🎉 Congratulations! You received +${data.reward} Coins!`);
-              window.location.reload();
-            }
-          } catch (e) {
-            alert('Error claiming coins.');
+
+      try {
+        const res = await fetch('/api/load-ad');
+        const data = await res.json();
+
+        // Check if ads available
+        if (!data.available) {
+          alert(data.message);
+          btn.innerText = "⚠️ Ads Not Available";
+          setTimeout(() => {
+            btn.innerText = "▶ Watch Ad (+10 Coins)";
             btn.disabled = false;
-            btn.innerText = '▶ Watch Ad (+10 Coins)';
-          }
+          }, 3000);
+          return;
         }
-      }, 1000);
+
+        // Open Ad Player Modal
+        const ad = data.ad;
+        document.getElementById('adImage').src = ad.image;
+        document.getElementById('adSponsorName').innerText = ad.sponsor;
+        document.getElementById('adTitle').innerText = ad.title;
+        
+        const adModal = document.getElementById('adPlayerModal');
+        adModal.style.display = 'flex';
+
+        let seconds = 10;
+        const timerBadge = document.getElementById('adTimerBadge');
+        const claimBtn = document.getElementById('claimRewardBtn');
+        claimBtn.style.display = 'none';
+
+        const interval = setInterval(() => {
+          seconds--;
+          if (seconds > 0) {
+            timerBadge.innerText = `⏳ Ad Playing: ${seconds}s remaining (Do not close)`;
+          } else {
+            clearInterval(interval);
+            timerBadge.innerText = "✅ Ad Completed Successfully!";
+            timerBadge.style.background = "#16a34a";
+            claimBtn.style.display = "block";
+          }
+        }, 1000);
+
+      } catch (e) {
+        alert("Ad network server error. Try again!");
+        btn.innerText = "▶ Watch Ad (+10 Coins)";
+        btn.disabled = false;
+      }
+    }
+
+    async function claimFinishedAdReward() {
+      const claimBtn = document.getElementById('claimRewardBtn');
+      claimBtn.innerText = "Verifying & Adding Coins...";
+      claimBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert(`🎉 Congratulations! Full Ad completed. You received +${data.reward} Coins!`);
+          document.getElementById('adPlayerModal').style.display = 'none';
+          window.location.reload();
+        } else {
+          alert(data.message);
+          claimBtn.disabled = false;
+        }
+      } catch (e) {
+        alert("Verification failed!");
+      }
     }
 
     // Complete Task Reward
