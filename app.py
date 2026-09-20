@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_production_secret_2026")
 
-# Database Setup (Render safe path)
+# Database Setup
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pricedekho.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -37,6 +37,7 @@ class User(UserMixin, db.Model):
     bank_account = db.Column(db.String(50), nullable=True, default="")
     bank_ifsc = db.Column(db.String(30), nullable=True, default="")
     transactions = db.relationship('Transaction', backref='user', lazy=True, cascade="all, delete-orphan")
+    payouts = db.relationship('PayoutRequest', backref='user', lazy=True, cascade="all, delete-orphan")
 
     def completion_percentage(self):
         score = 0
@@ -52,7 +53,7 @@ class User(UserMixin, db.Model):
             score += 20
         return score
 
-# Earning History / Statement Model
+# Earning History Model
 class Transaction(db.Model):
     __tablename__ = 'transaction'
     id = db.Column(db.Integer, primary_key=True)
@@ -60,6 +61,18 @@ class Transaction(db.Model):
     title = db.Column(db.String(200), nullable=False)
     coins = db.Column(db.Integer, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Payout Request Model (₹50 Minimum Payout)
+class PayoutRequest(db.Model):
+    __tablename__ = 'payout_request'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount_inr = db.Column(db.Integer, default=50)
+    coins_deducted = db.Column(db.Integer, default=500)
+    payment_method = db.Column(db.String(100), nullable=False) # e.g. UPI or Bank
+    status = db.Column(db.String(20), default="Pending") # Pending, Completed, Rejected
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime, nullable=True)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -167,13 +180,18 @@ def home():
     deals = []
     query = ""
     history = []
+    pending_payout = None
+    last_payout = None
 
     if current_user.is_authenticated:
         try:
             history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
+            # Pending Payout Check
+            pending_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").order_by(PayoutRequest.timestamp.desc()).first()
+            # Last Successful Payment Check
+            last_payout = PayoutRequest.query.filter_by(user_id=current_user.id, status="Completed").order_by(PayoutRequest.completed_at.desc()).first()
         except Exception:
             db.session.rollback()
-            history = []
 
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
@@ -186,13 +204,12 @@ def home():
                     db.session.add(tx)
                     db.session.commit()
                     history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
-                except Exception as e:
+                except Exception:
                     db.session.rollback()
-                    print("Transaction Error:", e)
 
-    return render_template('index.html', deals=deals, query=query, history=history)
+    return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
-# API: Watch Ad Reward
+# API: Watch Ad
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
@@ -206,7 +223,7 @@ def claim_ad_reward():
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Complete Task Reward
+# API: Complete Task
 @app.route('/api/complete-task', methods=['POST'])
 @login_required
 def complete_task():
@@ -224,7 +241,41 @@ def complete_task():
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# Profile Update Route (Save 5 Fields with Direct DB Commit)
+# API: Request Payout (₹50 Minimum Rule: 500 Coins = ₹50)
+@app.route('/api/request-payout', methods=['POST'])
+@login_required
+def request_payout():
+    try:
+        # Check if already has a pending request
+        existing = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").first()
+        if existing:
+            return jsonify({"success": False, "message": "Aapki pichli ₹50 payout request already Pending/Processing me hai!"}), 400
+
+        # Check Minimum Coins requirement: 500 coins = ₹50
+        if current_user.coins < 500:
+            remaining = 500 - current_user.coins
+            return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 500 coins chahiye. Aapko aur {remaining} coins earn karne honge!"}), 400
+
+        # Check Payment Method Added
+        p_method = current_user.upi_id if current_user.upi_id else f"{current_user.bank_account} ({current_user.bank_ifsc})"
+        if not current_user.upi_id and not current_user.bank_account:
+            return jsonify({"success": False, "message": "Kripya payout lene se pehle apni profile me UPI ID ya Bank details add karein!"}), 400
+
+        # Deduct 500 Coins and create Payout Request
+        current_user.coins -= 500
+        req = PayoutRequest(user_id=current_user.id, amount_inr=50, coins_deducted=500, payment_method=p_method, status="Pending")
+        tx = Transaction(user_id=current_user.id, title="Payout Request Submitted (₹50)", coins=-500)
+        
+        db.session.add(req)
+        db.session.add(tx)
+        db.session.commit()
+
+        return jsonify({"success": True, "message": "₹50 payout request successfully submit ho gayi hai! 24 ghante ke andar transfer ho jayegi."})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# Profile Update Route
 @app.route('/profile/update', methods=['POST'])
 @login_required
 def update_profile():
@@ -247,14 +298,11 @@ def update_profile():
         current_user.bank_account = bank_account
         current_user.bank_ifsc = bank_ifsc
 
-        # Save record of profile update
-        tx = Transaction(user_id=current_user.id, title="Profile Details Saved & Synced", coins=0)
+        tx = Transaction(user_id=current_user.id, title="Profile KYC Updated", coins=0)
         db.session.add(tx)
         db.session.commit()
-        print(f"--> [PROFILE SAVED] {current_user.name} | Phone: {current_user.phone} | UPI: {current_user.upi_id}")
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        print("Profile Save Error:", e)
 
     return redirect(url_for('home'))
 
@@ -293,7 +341,6 @@ def google_authorize():
             db.session.add(user)
             db.session.commit()
             
-            # Welcome Bonus Entry
             welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus", coins=50)
             db.session.add(welcome_tx)
             db.session.commit()
@@ -314,34 +361,84 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-# Admin Dashboard
+# Admin Dashboard with Payout Management
 @app.route('/admin/users')
 def view_users():
     secret_key = request.args.get('key')
     if secret_key != "pricedekho_admin_99":
         return "Access Denied: Invalid Key", 403
 
+    # Handle Admin Payout Approval Action: /admin/users?key=pricedekho_admin_99&approve_payout=1
+    approve_id = request.args.get('approve_payout')
+    if approve_id:
+        p_req = PayoutRequest.query.get(int(approve_id))
+        if p_req and p_req.status == "Pending":
+            p_req.status = "Completed"
+            p_req.completed_at = datetime.utcnow()
+            tx = Transaction(user_id=p_req.user_id, title=f"Payout Completed: ₹{p_req.amount_inr} transferred", coins=0)
+            db.session.add(tx)
+            db.session.commit()
+            return redirect(url_for('view_users', key="pricedekho_admin_99"))
+
     users = User.query.all()
-    total = len(users)
+    payout_requests = PayoutRequest.query.order_by(PayoutRequest.timestamp.desc()).all()
 
     html = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>PriceDekho Admin - Users List</title>
+        <title>PriceDekho Admin - Payouts & Users</title>
         <style>
-            body {{ font-family: sans-serif; padding: 24px; background: #f8fafc; color: #0f172a; }}
+            body {{ font-family: -apple-system, sans-serif; padding: 24px; background: #f8fafc; color: #0f172a; }}
             h2 {{ margin-bottom: 8px; }}
             .badge {{ background: #2563eb; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 16px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 14px; margin-bottom: 30px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
             th, td {{ padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }}
             th {{ background: #f1f5f9; font-weight: 700; }}
             tr:hover {{ background: #f8fafc; }}
             .avatar {{ width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; }}
+            .btn-pay {{ background: #16a34a; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 12px; }}
+            .btn-pay:hover {{ background: #15803d; }}
+            .status-pending {{ color: #ea580c; font-weight: 700; background: #ffedd5; padding: 3px 8px; border-radius: 6px; }}
+            .status-paid {{ color: #16a34a; font-weight: 700; background: #dcfce7; padding: 3px 8px; border-radius: 6px; }}
         </style>
     </head>
     <body>
-        <h2>Registered Users <span class="badge">Total: {total}</span></h2>
+        <h2>💸 Payout Requests (₹50 Withdrawals)</h2>
+        <table>
+            <tr>
+                <th>Req ID</th>
+                <th>User</th>
+                <th>Amount</th>
+                <th>Payment Destination (UPI / Bank)</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+    """
+
+    if not payout_requests:
+        html += "<tr><td colspan='7' style='text-align:center; color:#94a3b8; padding:16px;'>No payout requests yet.</td></tr>"
+    else:
+        for p in payout_requests:
+            act = f"<a href='/admin/users?key=pricedekho_admin_99&approve_payout={p.id}' class='btn-pay'>✔ Mark as Paid</a>" if p.status == 'Pending' else "<span style='color:#16a34a; font-weight:bold;'>Paid & Closed</span>"
+            st_class = "status-pending" if p.status == 'Pending' else "status-paid"
+            html += f"""
+                <tr>
+                    <td>#{p.id}</td>
+                    <td><strong>{p.user.name}</strong> ({p.user.email})</td>
+                    <td><strong>₹{p.amount_inr}</strong> (500 Coins)</td>
+                    <td><code>{p.payment_method}</code></td>
+                    <td>{p.timestamp.strftime('%d %b %Y, %I:%M %p')}</td>
+                    <td><span class='{st_class}'>{p.status}</span></td>
+                    <td>{act}</td>
+                </tr>
+            """
+
+    html += f"""
+        </table>
+
+        <h2>👥 Registered Users <span class="badge">Total: {len(users)}</span></h2>
         <table>
             <tr>
                 <th>Photo</th>
@@ -349,7 +446,7 @@ def view_users():
                 <th>Email</th>
                 <th>Mobile</th>
                 <th>UPI ID</th>
-                <th>Bank A/C & IFSC</th>
+                <th>Bank Info</th>
                 <th>Profile Status</th>
                 <th>Coins Balance</th>
             </tr>
@@ -373,7 +470,7 @@ def view_users():
                 <td><code>{upi_disp}</code></td>
                 <td>{bank_disp}</td>
                 <td>{status_tag}</td>
-                <td>🪙 <strong>{u.coins}</strong></td>
+                <td>🪙 <strong>{u.coins}</strong> (≈ ₹{u.coins/10})</td>
             </tr>
         """
 
@@ -388,7 +485,6 @@ def view_users():
 with app.app_context():
     db.create_all()
     try:
-        # SQLite schema auto-repair (add columns if missing without data wipe)
         with db.engine.connect() as conn:
             from sqlalchemy import text
             for col, col_type in [
