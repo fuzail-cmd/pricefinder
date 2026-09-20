@@ -195,8 +195,6 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      position: relative;
-      overflow: hidden;
       box-shadow: 0 4px 6px rgba(0,0,0,0.02);
       transition: transform 0.2s, border-color 0.2s;
     }
@@ -254,7 +252,7 @@
     .btn-tasks { background: #2563eb; color: white; }
     .btn-tasks:hover { background: #1d4ed8; }
 
-    /* Statement / History Section */
+    /* Statement Section */
     .statement-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -290,7 +288,6 @@
       background: #f8fafc;
       color: #64748b;
       font-weight: 600;
-      border-radius: 4px;
     }
 
     .statement-table td {
@@ -477,7 +474,6 @@
           <div class="profile-ring-wrap">
             <svg>
               <circle cx="21" cy="21" r="17" class="profile-ring-bg"></circle>
-              <!-- 2 * PI * 17 = 106.8 -->
               <circle cx="21" cy="21" r="17" class="profile-ring-bar"
                       stroke-dasharray="106.8"
                       stroke-dashoffset="{{ 106.8 - (106.8 * perc / 100) }}"
@@ -549,25 +545,25 @@
       </div>
     {% endif %}
 
-    <!-- 3. Logged-in User Dashboard: Earn Cards & Statement -->
+    <!-- 3. Logged-in User Dashboard -->
     {% if current_user.is_authenticated %}
       
       <!-- Side by Side Action Cards -->
       <div class="earning-cards-grid">
         
-        <!-- Card 1: Watch Ads and Earn Coins -->
+        <!-- Card 1: Watch Ads -->
         <div class="earn-card">
           <div>
             <span class="card-badge badge-ads">📺 Daily Video Ads</span>
             <h3 class="card-title">Watch Ads & Earn Coins</h3>
-            <p class="card-desc">Watch a short 10-second sponsor ad to earn instant coins directly to your wallet.</p>
+            <p class="card-desc">Watch a short 5-second sponsor ad to earn instant coins directly to your wallet.</p>
           </div>
           <button type="button" class="earn-action-btn btn-ads" id="watchAdBtn" onclick="watchAd()">
             ▶ Watch Ad (+10 Coins)
           </button>
         </div>
 
-        <!-- Card 2: Complete Tasks and Win Coins -->
+        <!-- Card 2: Complete Tasks -->
         <div class="earn-card">
           <div>
             <span class="card-badge badge-tasks">🎯 High Paying Tasks</span>
@@ -581,7 +577,7 @@
 
       </div>
 
-      <!-- Total Earning Statement (Passbook Table) -->
+      <!-- Total Earning Statement (Passbook) -->
       <div class="statement-card">
         <div class="statement-header">
           <div>
@@ -602,7 +598,7 @@
               <th style="text-align: right;">Status</th>
             </tr>
           </thead>
-          <tbody id="statementTableBody">
+          <tbody>
             {% if history %}
               {% for item in history %}
                 <tr>
@@ -624,7 +620,7 @@
 
   </div>
 
-  <!-- Profile Modal (5 Boxes) -->
+  <!-- Profile Modal -->
   {% if current_user.is_authenticated %}
   <div id="profileModal" class="modal-overlay">
     <div class="modal-card">
@@ -638,7 +634,7 @@
         <strong>{{ current_user.completion_percentage() }}% / 100%</strong>
       </div>
 
-      <form method="POST" action="/profile/update">
+      <form method="POST" action="/profile/update" onsubmit="alert('Profile Saved Successfully!')">
         <div class="form-group">
           <label>1. Profile Photo URL</label>
           <input type="url" name="profile_pic" placeholder="https://example.com/photo.jpg" value="{{ current_user.profile_pic or '' }}">
@@ -784,11 +780,17 @@
           clearInterval(timer);
           btn.innerText = 'Claiming Coins...';
           
-          const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
-          const data = await res.json();
-          if (data.success) {
-            alert(`🎉 Congratulations! You received +${data.reward} Coins!`);
-            window.location.reload();
+          try {
+            const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+              alert(`🎉 Congratulations! You received +${data.reward} Coins!`);
+              window.location.reload();
+            }
+          } catch (e) {
+            alert('Error claiming coins.');
+            btn.disabled = false;
+            btn.innerText = '▶ Watch Ad (+10 Coins)';
           }
         }
       }, 1000);
@@ -796,15 +798,19 @@
 
     // Complete Task Reward
     async function claimTaskReward(taskName, rewardCoins) {
-      const res = await fetch('/api/complete-task', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task_name: taskName, reward: rewardCoins })
-      });
-      const data = await res.json();
-      if (data.success) {
-        alert(`🎉 Task Completed! Received +${data.reward} Coins.`);
-        window.location.reload();
+      try {
+        const res = await fetch('/api/complete-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task_name: taskName, reward: rewardCoins })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`🎉 Task Completed! Received +${data.reward} Coins.`);
+          window.location.reload();
+        }
+      } catch (e) {
+        alert('Error recording task.');
       }
     }
   </script>
