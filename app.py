@@ -14,9 +14,17 @@ app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("SECRET_KEY", "pricedekho_secure_production_secret_2026")
 
-# Database Setup
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pricedekho.db')
+# Database Setup: Permanent PostgreSQL on Render (Zero Data Loss), SQLite for local fallback
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    # Render postgres:// compatibility fix for SQLAlchemy 1.4+
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'pricedekho.db')
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -222,7 +230,7 @@ def load_ad():
         "duration": 15
     })
 
-# 2. API: Claim Reward (Strict 15-Second Verification)
+# 2. API: Claim Reward (Strict 15-Second Anti-Cheat Verification)
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
@@ -231,7 +239,6 @@ def claim_ad_reward():
         return jsonify({"success": False, "message": "Ad session invalid. Kripya ad link open karke poora dekhein!"}), 400
 
     elapsed = time.time() - start_time
-    # Anti-cheat: 14.5 seconds minimum elapsed check
     if elapsed < 14.5:
         return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins lene ke liye pure 15 seconds wait karein."}), 400
 
@@ -264,7 +271,7 @@ def complete_task():
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Request Payout
+# API: Request Payout (₹50 Minimum Rule: 500 Coins = ₹50)
 @app.route('/api/request-payout', methods=['POST'])
 @login_required
 def request_payout():
@@ -499,27 +506,9 @@ def view_users():
     """
     return html
 
-# Automatic DB Migrations
+# Automatic Table Creation for PostgreSQL / SQLite
 with app.app_context():
     db.create_all()
-    try:
-        with db.engine.connect() as conn:
-            from sqlalchemy import text
-            for col, col_type in [
-                ("country_code", "VARCHAR(10) DEFAULT '+91'"),
-                ("phone", "VARCHAR(20) DEFAULT ''"),
-                ("upi_id", "VARCHAR(100) DEFAULT ''"),
-                ("bank_account", "VARCHAR(50) DEFAULT ''"),
-                ("bank_ifsc", "VARCHAR(30) DEFAULT ''"),
-                ("profile_pic", "VARCHAR(500) DEFAULT ''")
-            ]:
-                try:
-                    conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {col_type};"))
-                    conn.commit()
-                except Exception:
-                    pass
-    except Exception as e:
-        print("Schema sync check:", e)
 
 if __name__ == '__main__':
     app.run(debug=True)
