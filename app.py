@@ -38,7 +38,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False, default="SECURE_OAUTH_PASS")
     profile_pic = db.Column(db.String(500), nullable=True, default="")
-    coins = db.Column(db.Integer, default=100) # 100 Coins = ₹1 Welcome Bonus
+    coins = db.Column(db.Integer, default=50) # Balanced welcome bonus (₹0.50)
     country_code = db.Column(db.String(10), nullable=True, default="+91")
     phone = db.Column(db.String(20), nullable=True, default="")
     upi_id = db.Column(db.String(100), nullable=True, default="")
@@ -46,6 +46,7 @@ class User(UserMixin, db.Model):
     bank_ifsc = db.Column(db.String(30), nullable=True, default="")
     transactions = db.relationship('Transaction', backref='user', lazy=True, cascade="all, delete-orphan")
     payouts = db.relationship('PayoutRequest', backref='user', lazy=True, cascade="all, delete-orphan")
+    task_claims = db.relationship('TaskSubmission', backref='user', lazy=True, cascade="all, delete-orphan")
 
     def completion_percentage(self):
         score = 0
@@ -81,6 +82,17 @@ class PayoutRequest(db.Model):
     status = db.Column(db.String(20), default="Pending")
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     completed_at = db.Column(db.DateTime, nullable=True)
+
+# Task Submission Model (Requires Admin Verification)
+class TaskSubmission(db.Model):
+    __tablename__ = 'task_submission'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    task_name = db.Column(db.String(150), nullable=False)
+    reward_coins = db.Column(db.Integer, nullable=False)
+    proof = db.Column(db.String(250), nullable=False)
+    status = db.Column(db.String(20), default="Pending") # Pending, Approved, Rejected
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -145,7 +157,6 @@ CATALOG = [
     }
 ]
 
-# Live Adsterra Smart Link
 ADSTERRA_DIRECT_LINK = "https://www.profitableratecpmnetwork.com/xgc4zwdgbd?key=d589889fe65e6a1ddeccaa95d291585c"
 
 def search_products(query):
@@ -205,16 +216,8 @@ def home():
     if request.method == 'POST':
         query = request.form.get('query', '').strip()
         if query:
+            # GLITCH FIX: Search rewards disabled (0 Coins given)
             deals = search_products(query)
-            if current_user.is_authenticated:
-                try:
-                    current_user.coins += 2 # Search Reward: 2 Coins
-                    tx = Transaction(user_id=current_user.id, title=f"Searched: {query}", coins=2)
-                    db.session.add(tx)
-                    db.session.commit()
-                    history = Transaction.query.filter_by(user_id=current_user.id).order_by(Transaction.timestamp.desc()).limit(15).all()
-                except Exception:
-                    db.session.rollback()
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
@@ -229,7 +232,7 @@ def load_ad():
         "duration": 15
     })
 
-# 2. API: Claim Reward (Profitable Model: +4 Coins per 15s View)
+# 2. API: Claim Reward (1 Coin = ₹0.01 per 15s to guarantee profit on low CPM)
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
@@ -239,33 +242,47 @@ def claim_ad_reward():
 
     elapsed = time.time() - start_time
     if elapsed < 14.5:
-        return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins lene ke liye pure 15 seconds wait karein."}), 400
+        return jsonify({"success": False, "message": "Ad poori nahi dekhi! Pure 15 seconds wait karein."}), 400
 
     try:
-        current_user.coins += 4 # User ko 4 Coins (₹0.04), Aapko milenge ₹0.08–₹0.15
-        tx = Transaction(user_id=current_user.id, title="Watched Adsterra Sponsor Ad (15s)", coins=4)
+        current_user.coins += 1 # 1 Coin per ad ensures sustainability
+        tx = Transaction(user_id=current_user.id, title="Watched Sponsor Ad (15s)", coins=1)
         db.session.add(tx)
         db.session.commit()
         session.pop('ad_start_time', None)
-        return jsonify({"success": True, "coins": current_user.coins, "reward": 4})
+        return jsonify({"success": True, "coins": current_user.coins, "reward": 1})
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
 
-# API: Complete Task
-@app.route('/api/complete-task', methods=['POST'])
+# 3. API: Submit Task Proof (NO INSTANT COINS - User must submit proof first)
+@app.route('/api/submit-task-proof', methods=['POST'])
 @login_required
-def complete_task():
+def submit_task_proof():
     try:
         data = request.get_json() or {}
-        task_name = data.get('task_name', 'Task Bonus')
-        reward_coins = int(data.get('reward', 100))
+        task_name = data.get('task_name', '').strip()
+        proof_text = data.get('proof', '').strip()
+        reward_coins = int(data.get('reward', 50))
 
-        current_user.coins += reward_coins
-        tx = Transaction(user_id=current_user.id, title=f"Completed Task: {task_name}", coins=reward_coins)
-        db.session.add(tx)
+        if not proof_text or len(proof_text) < 4:
+            return jsonify({"success": False, "message": "Kripya genuine task reference ya transaction/user ID submit karein!"}), 400
+
+        # Create Pending submission entry
+        sub = TaskSubmission(
+            user_id=current_user.id,
+            task_name=task_name,
+            reward_coins=reward_coins,
+            proof=proof_text,
+            status="Pending"
+        )
+        db.session.add(sub)
         db.session.commit()
-        return jsonify({"success": True, "coins": current_user.coins, "reward": reward_coins})
+
+        return jsonify({
+            "success": True,
+            "message": f"Task '{task_name}' review ke liye submit ho gaya! Admin verification ke baad {reward_coins} coins add honge."
+        })
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
@@ -277,15 +294,15 @@ def request_payout():
     try:
         existing = PayoutRequest.query.filter_by(user_id=current_user.id, status="Pending").first()
         if existing:
-            return jsonify({"success": False, "message": "Aapki pichli ₹50 payout request already Pending/Processing me hai!"}), 400
+            return jsonify({"success": False, "message": "Aapki pichli ₹50 payout request already Pending me hai!"}), 400
 
         if current_user.coins < 5000:
             remaining = 5000 - current_user.coins
-            return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 5,000 coins chahiye. Aapko aur {remaining} coins earn karne honge!"}), 400
+            return jsonify({"success": False, "message": f"Minimum payout ₹50 ke liye 5,000 coins chahiye. Aur {remaining} coins earn karein!"}), 400
 
         p_method = current_user.upi_id if current_user.upi_id else f"{current_user.bank_account} ({current_user.bank_ifsc})"
         if not current_user.upi_id and not current_user.bank_account:
-            return jsonify({"success": False, "message": "Kripya payout lene se pehle apni profile me UPI ID ya Bank details add karein!"}), 400
+            return jsonify({"success": False, "message": "Payout lene se pehle UPI ID ya Bank details add karein!"}), 400
 
         current_user.coins -= 5000
         req = PayoutRequest(user_id=current_user.id, amount_inr=50, coins_deducted=5000, payment_method=p_method, status="Pending")
@@ -295,7 +312,7 @@ def request_payout():
         db.session.add(tx)
         db.session.commit()
 
-        return jsonify({"success": True, "message": "₹50 payout request successfully submit ho gayi hai! 24 ghante ke andar transfer ho jayegi."})
+        return jsonify({"success": True, "message": "₹50 payout request submit ho gayi hai! 24h me process hogi."})
     except Exception as e:
         db.session.rollback()
         return jsonify({"success": False, "message": str(e)}), 500
@@ -323,8 +340,6 @@ def update_profile():
         current_user.bank_account = bank_account
         current_user.bank_ifsc = bank_ifsc
 
-        tx = Transaction(user_id=current_user.id, title="Profile KYC Updated", coins=0)
-        db.session.add(tx)
         db.session.commit()
     except Exception:
         db.session.rollback()
@@ -361,12 +376,12 @@ def google_authorize():
                 email=email,
                 password="GOOGLE_AUTH_SECURE",
                 profile_pic=picture,
-                coins=100
+                coins=50
             )
             db.session.add(user)
             db.session.commit()
             
-            welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus (100 Coins = ₹1)", coins=100)
+            welcome_tx = Transaction(user_id=user.id, title="Welcome Sign Up Bonus", coins=50)
             db.session.add(welcome_tx)
             db.session.commit()
         else:
@@ -377,7 +392,6 @@ def google_authorize():
         login_user(user)
         return redirect(url_for('home'))
     except Exception as e:
-        print("OAuth Error:", e)
         return redirect(url_for('home'))
 
 @app.route('/logout')
@@ -393,6 +407,7 @@ def view_users():
     if secret_key != "pricedekho_admin_99":
         return "Access Denied: Invalid Key", 403
 
+    # Action: Approve Payout
     approve_id = request.args.get('approve_payout')
     if approve_id:
         p_req = PayoutRequest.query.get(int(approve_id))
@@ -404,108 +419,93 @@ def view_users():
             db.session.commit()
             return redirect(url_for('view_users', key="pricedekho_admin_99"))
 
+    # Action: Approve Task
+    approve_task_id = request.args.get('approve_task')
+    if approve_task_id:
+        t_sub = TaskSubmission.query.get(int(approve_task_id))
+        if t_sub and t_sub.status == "Pending":
+            t_sub.status = "Approved"
+            t_sub.user.coins += t_sub.reward_coins
+            tx = Transaction(user_id=t_sub.user_id, title=f"Task Approved: {t_sub.task_name}", coins=t_sub.reward_coins)
+            db.session.add(tx)
+            db.session.commit()
+            return redirect(url_for('view_users', key="pricedekho_admin_99"))
+
     users = User.query.all()
     payout_requests = PayoutRequest.query.order_by(PayoutRequest.timestamp.desc()).all()
+    task_submissions = TaskSubmission.query.order_by(TaskSubmission.timestamp.desc()).all()
 
     html = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>PriceDekho Admin - Payouts & Users</title>
+        <title>PriceDekho Admin - Payouts & Tasks</title>
         <style>
             body {{ font-family: -apple-system, sans-serif; padding: 24px; background: #f8fafc; color: #0f172a; }}
-            h2 {{ margin-bottom: 8px; }}
-            .badge {{ background: #2563eb; color: white; padding: 4px 10px; border-radius: 12px; font-size: 14px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 14px; margin-bottom: 30px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
-            th, td {{ padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; vertical-align: middle; }}
+            h2 {{ margin-bottom: 8px; margin-top: 24px; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 24px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+            th, td {{ padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0; font-size: 13px; }}
             th {{ background: #f1f5f9; font-weight: 700; }}
-            tr:hover {{ background: #f8fafc; }}
-            .avatar {{ width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1px solid #cbd5e1; }}
-            .btn-pay {{ background: #16a34a; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 12px; }}
-            .btn-pay:hover {{ background: #15803d; }}
-            .status-pending {{ color: #ea580c; font-weight: 700; background: #ffedd5; padding: 3px 8px; border-radius: 6px; }}
-            .status-paid {{ color: #16a34a; font-weight: 700; background: #dcfce7; padding: 3px 8px; border-radius: 6px; }}
+            .btn-action {{ background: #16a34a; color: white; padding: 5px 10px; border-radius: 6px; text-decoration: none; font-weight: 700; font-size: 11px; }}
+            .status-pending {{ color: #ea580c; font-weight: 700; background: #ffedd5; padding: 2px 6px; border-radius: 4px; }}
+            .status-paid {{ color: #16a34a; font-weight: 700; background: #dcfce7; padding: 2px 6px; border-radius: 4px; }}
         </style>
     </head>
     <body>
-        <h2>💸 Payout Requests (₹50 Withdrawals)</h2>
+        <h2>📝 Task Submissions Verification (Review Proof Before Paying)</h2>
         <table>
             <tr>
-                <th>Req ID</th>
-                <th>User</th>
-                <th>Amount</th>
-                <th>Payment Destination (UPI / Bank)</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>ID</th><th>User</th><th>Task</th><th>Reward</th><th>Proof Submitted</th><th>Status</th><th>Action</th>
             </tr>
     """
-
-    if not payout_requests:
-        html += "<tr><td colspan='7' style='text-align:center; color:#94a3b8; padding:16px;'>No payout requests yet.</td></tr>"
+    if not task_submissions:
+        html += "<tr><td colspan='7' style='text-align:center; padding:12px; color:#94a3b8;'>No pending tasks to review.</td></tr>"
     else:
-        for p in payout_requests:
-            act = f"<a href='/admin/users?key=pricedekho_admin_99&approve_payout={p.id}' class='btn-pay'>✔ Mark as Paid</a>" if p.status == 'Pending' else "<span style='color:#16a34a; font-weight:bold;'>Paid & Closed</span>"
-            st_class = "status-pending" if p.status == 'Pending' else "status-paid"
+        for t in task_submissions:
+            action = f"<a href='/admin/users?key=pricedekho_admin_99&approve_task={t.id}' class='btn-action'>✔ Approve & Give Coins</a>" if t.status == 'Pending' else "Approved"
             html += f"""
                 <tr>
-                    <td>#{p.id}</td>
-                    <td><strong>{p.user.name}</strong> ({p.user.email})</td>
-                    <td><strong>₹{p.amount_inr}</strong> (5,000 Coins)</td>
-                    <td><code>{p.payment_method}</code></td>
-                    <td>{p.timestamp.strftime('%d %b %Y, %I:%M %p')}</td>
-                    <td><span class='{st_class}'>{p.status}</span></td>
-                    <td>{act}</td>
+                    <td>#{t.id}</td>
+                    <td>{t.user.name} ({t.user.email})</td>
+                    <td><strong>{t.task_name}</strong></td>
+                    <td>+{t.reward_coins} Coins</td>
+                    <td><code>{t.proof}</code></td>
+                    <td><span class='status-{"pending" if t.status=="Pending" else "paid"}'>{t.status}</span></td>
+                    <td>{action}</td>
                 </tr>
             """
+
+    html += """
+        </table>
+
+        <h2>💸 Payout Requests (₹50)</h2>
+        <table>
+            <tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Action</th></tr>
+    """
+    for p in payout_requests:
+        act = f"<a href='/admin/users?key=pricedekho_admin_99&approve_payout={p.id}' class='btn-action'>✔ Mark Paid</a>" if p.status == 'Pending' else "Paid"
+        html += f"""
+            <tr>
+                <td>#{p.id}</td><td>{p.user.name}</td><td>₹{p.amount_inr}</td><td><code>{p.payment_method}</code></td>
+                <td><span class='status-{"pending" if p.status=="Pending" else "paid"}'>{p.status}</span></td><td>{act}</td>
+            </tr>
+        """
 
     html += f"""
         </table>
 
-        <h2>👥 Registered Users <span class="badge">Total: {len(users)}</span></h2>
+        <h2>👥 Registered Users ({len(users)})</h2>
         <table>
-            <tr>
-                <th>Photo</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Mobile</th>
-                <th>UPI ID</th>
-                <th>Bank Info</th>
-                <th>Profile Status</th>
-                <th>Coins Balance</th>
-            </tr>
+            <tr><th>Name</th><th>Email</th><th>Mobile</th><th>Coins Balance</th><th>INR Value</th></tr>
     """
-
     for u in users:
-        pic = u.profile_pic if u.profile_pic else "https://cdn-icons-png.flaticon.com/512/3177/3177440.png"
-        code = u.country_code or "+91"
-        phone_txt = f"{code} {u.phone}" if u.phone else "<span style='color:#94a3b8;'>Not added</span>"
-        upi_disp = u.upi_id if u.upi_id else "<span style='color:#94a3b8;'>Not added</span>"
-        bank_disp = f"{u.bank_account} ({u.bank_ifsc})" if (u.bank_account or u.bank_ifsc) else "<span style='color:#94a3b8;'>Not added</span>"
-        perc = u.completion_percentage()
-        status_tag = f"<span style='color:#16a34a;font-weight:700;'>✔ Completed</span>" if perc == 100 else f"<span style='color:#ea580c;font-weight:700;'>{perc}% Filled</span>"
-
         html += f"""
-            <tr>
-                <td><img src="{pic}" class="avatar" alt="Avatar"></td>
-                <td><strong>{u.name}</strong></td>
-                <td>{u.email}</td>
-                <td><strong>{phone_txt}</strong></td>
-                <td><code>{upi_disp}</code></td>
-                <td>{bank_disp}</td>
-                <td>{status_tag}</td>
-                <td>🪙 <strong>{u.coins}</strong> (≈ ₹{u.coins / 100:.2f})</td>
-            </tr>
+            <tr><td>{u.name}</td><td>{u.email}</td><td>{u.phone or 'None'}</td><td>🪙 {u.coins}</td><td>₹{u.coins / 100:.2f}</td></tr>
         """
 
-    html += """
-        </table>
-    </body>
-    </html>
-    """
+    html += "</table></body></html>"
     return html
 
-# Automatic Table Creation
 with app.app_context():
     db.create_all()
 
