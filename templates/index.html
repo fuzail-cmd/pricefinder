@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PriceDekho - Compare, Earn & Win Cash</title>
 
+  <!-- 1. ADSTERRA SOCIAL BAR (Unit: 31335901) - Top Push/Rich Media Notification -->
+  <script type='text/javascript' src='//pl24618291.profitableratecpmnetwork.com/31/33/59/31335901.js'></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -69,19 +72,46 @@
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: 20px 16px;
+      padding: 16px;
       flex: 1;
       width: 100%;
     }
 
-    /* Genuine Profile KYC Card */
+    /* Ad Banner Holders (Isolated Iframe style prevents script conflicts) */
+    .ad-container-leaderboard {
+      text-align: center;
+      margin: 12px auto;
+      overflow: hidden;
+      min-height: 90px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .ad-container-rectangle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 16px 0;
+      min-height: 250px;
+    }
+
+    .ad-container-mobile {
+      text-align: center;
+      margin: 14px auto;
+      min-height: 50px;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Professional Profile Card */
     .profile-card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      padding: 18px 20px;
+      padding: 16px 20px;
       margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
@@ -97,15 +127,9 @@
       gap: 14px;
     }
 
-    .profile-avatar-wrap {
-      position: relative;
-      width: 52px;
-      height: 52px;
-    }
-
     .profile-avatar-wrap img {
-      width: 52px;
-      height: 52px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
       object-fit: cover;
       border: 2px solid #2563eb;
@@ -135,12 +159,6 @@
       margin-top: 3px;
     }
 
-    .profile-right {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
     .btn-edit-profile {
       background: #f1f5f9;
       color: #1e293b;
@@ -152,12 +170,10 @@
       cursor: pointer;
     }
 
-    .btn-edit-profile:hover { background: #e2e8f0; }
-
     /* Search Section */
     .search-section {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .search-box {
@@ -189,7 +205,7 @@
       cursor: pointer;
     }
 
-    /* Financial Cards */
+    /* Financial Status Grid */
     .wallet-status-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -218,12 +234,13 @@
       color: #0f172a;
     }
 
+    /* Payout Banner Box */
     .payout-action-box {
       background: linear-gradient(135deg, #1e293b, #0f172a);
       color: white;
       border-radius: 16px;
       padding: 18px 20px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
@@ -248,11 +265,12 @@
       cursor: not-allowed;
     }
 
+    /* Reward Cards */
     .earning-cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
 
     .earn-card {
@@ -277,17 +295,14 @@
     }
 
     .btn-ads { background: #f59e0b; color: white; }
-    .btn-ads:hover { background: #d97706; }
-
     .btn-tasks { background: #2563eb; color: white; }
-    .btn-tasks:hover { background: #1d4ed8; }
 
-    /* Collapsible Earning History Box */
+    /* Collapsible History Box */
     .history-collapse-box {
       background: #ffffff;
       border: 1px solid #e2e8f0;
       border-radius: 16px;
-      margin-bottom: 30px;
+      margin-bottom: 24px;
       overflow: hidden;
     }
 
@@ -297,23 +312,10 @@
       justify-content: space-between;
       align-items: center;
       cursor: pointer;
-      user-select: none;
       background: #ffffff;
-      transition: background 0.2s;
     }
 
-    .history-header-toggle:hover {
-      background: #f8fafc;
-    }
-
-    .history-header-title {
-      font-size: 15px;
-      font-weight: 800;
-      color: #0f172a;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .history-header-toggle:hover { background: #f8fafc; }
 
     .history-toggle-btn {
       background: #eff6ff;
@@ -351,6 +353,7 @@
       border-bottom: 1px solid #f1f5f9;
     }
 
+    /* Deals Grid */
     .deals-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -416,10 +419,27 @@
     </div>
   </nav>
 
+  <!-- 2. TOP AD UNIT: Leaderboard Banner (Unit: 31335834 - 728x90 / Fallback 468x60 Unit: 31335830) -->
+  <div class="ad-container-leaderboard">
+    <iframe srcdoc="
+      <style>body{margin:0;padding:0;overflow:hidden;text-align:center;}</style>
+      <script type='text/javascript'>
+        atOptions = {
+          'key' : '31335834',
+          'format' : 'iframe',
+          'height' : 90,
+          'width' : 728,
+          'params' : {}
+        };
+      </script>
+      <script type='text/javascript' src='//www.highperformanceformat.com/31335834/invoke.js'></script>
+    " width="728" height="90" frameborder="0" scrolling="no"></iframe>
+  </div>
+
   <!-- Main Container -->
   <div class="container">
     
-    <!-- Professional User Profile Card -->
+    <!-- User Profile Card -->
     {% if current_user.is_authenticated %}
       <div class="profile-card">
         <div class="profile-left">
@@ -427,18 +447,16 @@
             <img src="{{ current_user.profile_pic or 'https://cdn-icons-png.flaticon.com/512/3177/3177440.png' }}" alt="Profile">
           </div>
           <div class="profile-info">
-            <h3>{{ current_user.name }} <span class="badge-verified">✔ Active Member</span></h3>
+            <h3>{{ current_user.name }} <span class="badge-verified">✔ Verified Member</span></h3>
             <div class="profile-meta">
               {{ current_user.email }} • KYC: <strong>{{ current_user.completion_percentage() }}% Completed</strong>
             </div>
             <div class="profile-meta" style="color: #0f172a; font-weight: 600; margin-top: 4px;">
-              UPI: <code>{{ current_user.upi_id or 'Not linked' }}</code> | Phone: <code>{{ current_user.phone or 'Not linked' }}</code>
+              UPI: <code>{{ current_user.upi_id or 'Not added' }}</code> | Phone: <code>{{ current_user.phone or 'Not added' }}</code>
             </div>
           </div>
         </div>
-        <div class="profile-right">
-          <button class="btn-edit-profile" onclick="openProfileModal()">⚙️ Edit KYC / Payment Info</button>
-        </div>
+        <button class="btn-edit-profile" onclick="openProfileModal()">⚙️ Edit KYC & Withdrawal Details</button>
       </div>
     {% endif %}
 
@@ -452,6 +470,15 @@
         <button type="submit">Compare Prices</button>
       </form>
     </section>
+
+    <!-- 3. NATIVE BANNER AD (Unit: 31335829) -->
+    <div style="margin: 16px auto; text-align: center;">
+      <iframe srcdoc="
+        <style>body{margin:0;padding:0;overflow:hidden;text-align:center;}</style>
+        <script async='async' data-cfasync='false' src='//pl24618291.profitableratecpmnetwork.com/31335829/invoke.js'></script>
+        <div id='container-31335829'></div>
+      " width="100%" height="110" frameborder="0" scrolling="no"></iframe>
+    </div>
 
     <!-- Deals Results -->
     {% if deals %}
@@ -479,7 +506,7 @@
 
     {% if current_user.is_authenticated %}
       
-      <!-- Wallet Cards -->
+      <!-- Wallet Dashboard -->
       <div class="wallet-status-grid">
         <div class="wallet-card">
           <div class="wallet-card-header">💰 Available Balance</div>
@@ -525,10 +552,10 @@
         </div>
       </div>
 
-      <!-- Dual Monetization Action Cards -->
+      <!-- Action Cards: Smartlink & Monetag -->
       <div class="earning-cards-grid">
         
-        <!-- Channel 1: Adsterra 15s Ad -->
+        <!-- 4. ADSTERRA SMARTLINK (Unit: 31335828) -->
         <div class="earn-card">
           <div>
             <span style="font-size: 11px; font-weight: 700; background:#fef3c7; color:#b45309; padding: 2px 8px; border-radius:10px;">📺 Daily Sponsored Ad</span>
@@ -538,7 +565,7 @@
           <button class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdsterraFlow()">▶ Watch 15s Ad (+1 Coin)</button>
         </div>
 
-        <!-- Channel 2: Monetag 30s High Reward Task -->
+        <!-- 5. MONETAG TASK (High Yield) -->
         <div class="earn-card">
           <div>
             <span style="font-size: 11px; font-weight: 700; background:#dbeafe; color:#1d4ed8; padding: 2px 8px; border-radius:10px;">🎯 Monetag Sponsored Tasks</span>
@@ -550,10 +577,27 @@
 
       </div>
 
+      <!-- 6. BANNER 300x250 (Unit: 31335831) MIDDLE RECTANGLE -->
+      <div class="ad-container-rectangle">
+        <iframe srcdoc="
+          <style>body{margin:0;padding:0;overflow:hidden;text-align:center;}</style>
+          <script type='text/javascript'>
+            atOptions = {
+              'key' : '31335831',
+              'format' : 'iframe',
+              'height' : 250,
+              'width' : 300,
+              'params' : {}
+            };
+          </script>
+          <script type='text/javascript' src='//www.highperformanceformat.com/31335831/invoke.js'></script>
+        " width="300" height="250" frameborder="0" scrolling="no"></iframe>
+      </div>
+
       <!-- Collapsible Earning History / Statement -->
       <div class="history-collapse-box">
         <div class="history-header-toggle" onclick="toggleEarningHistory()">
-          <div class="history-header-title">
+          <div style="font-size: 15px; font-weight: 800; color: #0f172a;">
             <span>📊 Total Earning Statement & Transaction History</span>
           </div>
           <button type="button" class="history-toggle-btn" id="historyToggleBtn">
@@ -589,7 +633,24 @@
 
   </div>
 
-  <!-- Countdown / Verification Modal -->
+  <!-- 7. MOBILE ANCHOR BANNER 320x50 (Unit: 31335835) -->
+  <div class="ad-container-mobile">
+    <iframe srcdoc="
+      <style>body{margin:0;padding:0;overflow:hidden;text-align:center;}</style>
+      <script type='text/javascript'>
+        atOptions = {
+          'key' : '31335835',
+          'format' : 'iframe',
+          'height' : 50,
+          'width' : 320,
+          'params' : {}
+        };
+      </script>
+      <script type='text/javascript' src='//www.highperformanceformat.com/31335835/invoke.js'></script>
+    " width="320" height="50" frameborder="0" scrolling="no"></iframe>
+  </div>
+
+  <!-- Reward Countdown Modal -->
   <div id="rewardModal" class="modal-overlay">
     <div class="ad-card">
       <div id="modalTimerBadge" style="background: #ea580c; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; margin-bottom: 14px;">
@@ -650,7 +711,6 @@
     function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
     function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
 
-    // Toggle Earning History Accordion
     function toggleEarningHistory() {
       const content = document.getElementById('historyContent');
       const btn = document.getElementById('historyToggleBtn');
@@ -663,7 +723,7 @@
       }
     }
 
-    // Accurate AdBlocker Check (No False Positives)
+    // Accurate AdBlocker Check
     async function checkAdBlocker() {
       return new Promise((resolve) => {
         const adTest = document.createElement('div');
