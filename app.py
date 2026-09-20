@@ -42,7 +42,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False, default="SECURE_OAUTH_PASS")
     profile_pic = db.Column(db.String(500), nullable=True, default="")
-    coins = db.Column(db.Integer, default=50)  # Welcome Bonus: 50 Coins (₹0.50)
+    coins = db.Column(db.Integer, default=50)  # 50 Coins = ₹0.50 Welcome
     country_code = db.Column(db.String(10), nullable=True, default="+91")
     phone = db.Column(db.String(20), nullable=True, default="")
     upi_id = db.Column(db.String(100), nullable=True, default="")
@@ -66,7 +66,7 @@ class User(UserMixin, db.Model):
             score += 20
         return score
 
-# Earning History Model
+# Transaction History Model
 class Transaction(db.Model):
     __tablename__ = 'transaction'
     id = db.Column(db.Integer, primary_key=True)
@@ -150,8 +150,8 @@ CATALOG = [
     }
 ]
 
-# Ad Links
-ADSTERRA_DIRECT_LINK = "https://www.profitableratecpmnetwork.com/xgc4zwdgbd?key=d589889fe65e6a1ddeccaa95d291585c"
+# Active Ad Links
+ADSTERRA_SMARTLINK = "https://www.profitableratecpmnetwork.com/xgc4zwdgbd?key=d589889fe65e6a1ddeccaa95d291585c"
 MONETAG_TASK_LINK = "https://omg10.com/4/11848381"
 
 def search_products(query):
@@ -215,14 +215,14 @@ def home():
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
-# 1. API: Load 15-Second Ad (Adsterra)
+# 1. API: Load 15-Second Adsterra Smartlink
 @app.route('/api/load-ad', methods=['GET'])
 @login_required
 def load_ad():
     session['ad_start_time'] = time.time()
     return jsonify({
         "available": True,
-        "ad_url": ADSTERRA_DIRECT_LINK,
+        "ad_url": ADSTERRA_SMARTLINK,
         "duration": 15
     })
 
@@ -232,7 +232,7 @@ def load_ad():
 def claim_ad_reward():
     start_time = session.get('ad_start_time')
     if not start_time:
-        return jsonify({"success": False, "message": "Ad session invalid. Kripya ad link open karke 15 second dekhein!"}), 400
+        return jsonify({"success": False, "message": "Ad session invalid. Kripya ad link open karein!"}), 400
 
     elapsed = time.time() - start_time
     if elapsed < 14.5:
@@ -260,13 +260,13 @@ def load_monetag_task():
         "duration": 30
     })
 
-# 4. API: Claim Monetag Task Reward (+5 Coins)
+# 4. API: Claim Monetag Task (+5 Coins)
 @app.route('/api/claim-monetag-task', methods=['POST'])
 @login_required
 def claim_monetag_task():
     start_time = session.get('task_start_time')
     if not start_time:
-        return jsonify({"success": False, "message": "Task session invalid. Kripya task open karke 30s interact karein!"}), 400
+        return jsonify({"success": False, "message": "Task session invalid. Kripya task open karein!"}), 400
 
     elapsed = time.time() - start_time
     if elapsed < 29.0:
@@ -274,7 +274,7 @@ def claim_monetag_task():
         return jsonify({"success": False, "message": f"Task incomplete! Kripya sponsor page par {remaining}s aur interact karein."}), 400
 
     try:
-        current_user.coins += 5  # +5 Coins = ₹0.05
+        current_user.coins += 5
         tx = Transaction(user_id=current_user.id, title="Completed Monetag Sponsored Task (30s)", coins=5)
         db.session.add(tx)
         db.session.commit()
@@ -388,7 +388,7 @@ def google_authorize():
 
         login_user(user)
         return redirect(url_for('home'))
-    except Exception as e:
+    except Exception:
         return redirect(url_for('home'))
 
 @app.route('/logout')
@@ -397,7 +397,7 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-# Admin Dashboard
+# Admin Panel
 @app.route('/admin/users')
 def view_users():
     secret_key = request.args.get('key')
@@ -468,7 +468,6 @@ def view_users():
     html += "</table></body></html>"
     return html
 
-# Automatic Table Creation
 with app.app_context():
     db.create_all()
 
