@@ -138,25 +138,8 @@ CATALOG = [
     }
 ]
 
-# Real Sponsor Ads Inventory (Change or toggle active state anytime)
-ACTIVE_ADS_INVENTORY = [
-    {
-        "id": "ad_101",
-        "sponsor": "Amazon Great Indian Festival",
-        "title": "Save Up to 70% on Top Laptops & Electronics!",
-        "image": "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=600",
-        "link": "https://www.amazon.in",
-        "duration": 10
-    },
-    {
-        "id": "ad_102",
-        "sponsor": "Flipkart Big Billion Days",
-        "title": "Crazy Deals on Smartphone Brands - Grab Now!",
-        "image": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600",
-        "link": "https://www.flipkart.com",
-        "duration": 10
-    }
-]
+# Live Adsterra Smart Link
+ADSTERRA_DIRECT_LINK = "https://www.profitableratecpmnetwork.com/xgc4zwdgbd?key=d589889fe65e6a1ddeccaa95d291585c"
 
 def search_products(query):
     deals = []
@@ -228,40 +211,33 @@ def home():
 
     return render_template('index.html', deals=deals, query=query, history=history, pending_payout=pending_payout, last_payout=last_payout)
 
-# 1. API: Check and Load Available Ad
+# 1. API: Load Ad & Start 15-Second Session
 @app.route('/api/load-ad', methods=['GET'])
 @login_required
 def load_ad():
-    # Check if inventory has ads
-    if not ACTIVE_ADS_INVENTORY:
-        return jsonify({"available": False, "message": "⚠️ Ads not available right now. Please try again later!"})
-    
-    # Pick next ad
-    ad = ACTIVE_ADS_INVENTORY[0]
-    # Set session watch timestamp to prevent cheat
     session['ad_start_time'] = time.time()
-    session['ad_id'] = ad['id']
     return jsonify({
         "available": True,
-        "ad": ad
+        "ad_url": ADSTERRA_DIRECT_LINK,
+        "duration": 15
     })
 
-# 2. API: Claim Reward ONLY After Ad Completion Verified
+# 2. API: Claim Reward (Strict 15-Second Verification)
 @app.route('/api/claim-ad-reward', methods=['POST'])
 @login_required
 def claim_ad_reward():
     start_time = session.get('ad_start_time')
     if not start_time:
-        return jsonify({"success": False, "message": "Ad session expired or not started!"}), 400
+        return jsonify({"success": False, "message": "Ad session invalid. Kripya ad link open karke poora dekhein!"}), 400
 
     elapsed = time.time() - start_time
-    # Must watch minimum 10 seconds (strict anti-cheat)
-    if elapsed < 9.5:
-        return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins tabhi milenge jab ad full complete hogi."}), 400
+    # Anti-cheat: 14.5 seconds minimum elapsed check
+    if elapsed < 14.5:
+        return jsonify({"success": False, "message": "Ad poori nahi dekhi! Coins lene ke liye pure 15 seconds wait karein."}), 400
 
     try:
         current_user.coins += 10
-        tx = Transaction(user_id=current_user.id, title="Watched Sponsor Video Ad", coins=10)
+        tx = Transaction(user_id=current_user.id, title="Watched Adsterra Sponsor Ad (15s)", coins=10)
         db.session.add(tx)
         db.session.commit()
         session.pop('ad_start_time', None)
@@ -523,7 +499,7 @@ def view_users():
     """
     return html
 
-# Automatic Database Migration / Column Injection
+# Automatic DB Migrations
 with app.app_context():
     db.create_all()
     try:
