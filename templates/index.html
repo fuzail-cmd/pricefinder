@@ -13,7 +13,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background-color: #f8fafc;
+      background-color: #f1f5f9;
       color: #0f172a;
       padding-bottom: 50px;
     }
@@ -46,30 +46,25 @@
       font-size: 13px;
     }
 
-    /* Mobile-Safe Container */
+    /* Mobile Container with Safe Margin */
     .container {
       width: 100%;
-      max-width: 1100px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 12px;
     }
 
-    /* Search Bar */
-    .search-wrapper {
-      margin: 14px 0 20px 0;
-      width: 100%;
-    }
-
-    .search-form {
+    .search-box {
+      margin: 12px 0 16px 0;
       display: flex;
       gap: 6px;
       width: 100%;
     }
 
-    .search-input {
+    .search-box input {
       flex: 1;
-      padding: 12px 14px;
-      font-size: 16px; /* Prevents iPhone auto zoom */
+      padding: 12px;
+      font-size: 16px;
       border: 1.5px solid #cbd5e1;
       border-radius: 8px;
       outline: none;
@@ -77,32 +72,27 @@
       min-width: 0;
     }
 
-    .search-input:focus {
-      border-color: #2563eb;
-    }
-
-    .search-btn {
+    .search-box button {
       padding: 12px 18px;
       background: #2563eb;
       color: #ffffff;
       border: none;
       border-radius: 8px;
-      font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       white-space: nowrap;
     }
 
-    .search-title {
+    .heading {
       font-size: 15px;
       font-weight: 700;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       color: #334155;
     }
 
-    /* Clean 2-Column Mobile Grid */
+    /* 2 Columns on Phone, 3-4 on Big Screens */
     .deals-grid {
-      display: grid;
+      display: grid !important;
       grid-template-columns: repeat(2, 1fr);
       gap: 10px;
       width: 100%;
@@ -119,11 +109,9 @@
     @media (min-width: 1024px) {
       .deals-grid {
         grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
       }
     }
 
-    /* Card */
     .card {
       background: #ffffff;
       border: 1px solid #e2e8f0;
@@ -132,6 +120,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      min-height: 270px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
@@ -180,7 +169,7 @@
     .card-price {
       font-size: 15px;
       font-weight: 800;
-      color: #0f172a;
+      color: #16a34a;
       margin-bottom: 10px;
     }
 
@@ -198,10 +187,10 @@
     .buy-btn.amazon { background: #f59e0b; color: #111827; }
     .buy-btn.flipkart { background: #2563eb; color: #ffffff; }
 
-    .empty-state {
-      text-align: center;
-      padding: 40px 16px;
+    .empty-card {
       background: #ffffff;
+      padding: 35px 16px;
+      text-align: center;
       border-radius: 10px;
       border: 1px dashed #cbd5e1;
       color: #64748b;
@@ -225,56 +214,44 @@
   </header>
 
   <main class="container">
-    <div class="search-wrapper">
-      <form action="/" method="GET" class="search-form">
-        <input 
-          type="text" 
-          name="q" 
-          class="search-input" 
-          value="{{ query }}" 
-          placeholder="Search mobile, laptop..." 
-          required
-        >
-        <button type="submit" class="search-btn">Search</button>
-      </form>
-    </div>
+    <form action="/" method="GET" class="search-box">
+      <input type="text" name="q" value="{{ query }}" placeholder="Search phone, earbuds, laptop..." required>
+      <button type="submit">Search</button>
+    </form>
 
     {% if query %}
-      <div class="search-title">Showing deals for: "<strong>{{ query }}</strong>"</div>
-    {% endif %}
+      <div class="heading">Comparisons for: "<strong>{{ query }}</strong>"</div>
 
-    {% if deals and deals|length > 0 %}
-      <div class="deals-grid">
-        {% for deal in deals %}
-          <div class="card">
-            <div>
-              <span class="badge {{ deal.store|lower }}">{{ deal.store }}</span>
-              <div class="img-box">
-                <img src="{{ deal.image }}" alt="{{ deal.title }}">
+      {% if deals and deals|length > 0 %}
+        <div class="deals-grid">
+          {% for deal in deals %}
+            <div class="card">
+              <div>
+                <span class="badge {{ deal.store|lower }}">{{ deal.store }}</span>
+                <div class="img-box">
+                  <img src="{{ deal.image }}" alt="{{ deal.title }}">
+                </div>
+                <div class="card-title">{{ deal.title }}</div>
+                <div class="card-price">{{ deal.price_raw }}</div>
               </div>
-              <div class="card-title" title="{{ deal.title }}">{{ deal.title }}</div>
-              <div class="card-price">{{ deal.price_raw }}</div>
+
+              <!-- Direct Store Landing -->
+              <a href="{{ deal.affiliate_url }}" target="_blank" rel="noopener noreferrer" class="buy-btn {{ deal.store|lower }}">
+                Check on {{ deal.store }}
+              </a>
             </div>
-            
-            <!-- Direct product page URL -->
-            <a 
-              href="{{ deal.affiliate_url }}" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              class="buy-btn {{ deal.store|lower }}"
-            >
-              Buy on {{ deal.store }}
-            </a>
-          </div>
-        {% endfor %}
-      </div>
-    {% elif query %}
-      <div class="empty-state">
-        <p>No products found for "{{ query }}". Try checking the spelling.</p>
-      </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-card">
+          <p>No results found. Try searching with another model name.</p>
+        </div>
+      {% endif %}
+
     {% else %}
-      <div class="empty-state">
-        <p>Search any product above to compare prices on Amazon & Flipkart.</p>
+      <div class="empty-card">
+        <h3>Search any model above</h3>
+        <p style="margin-top: 4px;">Compare live deals across Amazon & Flipkart instantly.</p>
       </div>
     {% endif %}
   </main>
