@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PriceDekho - Best Prices & Earn Rewards</title>
+  <title>PriceDekho - Compare, Earn & Win Cash</title>
 
   <style>
     * {
@@ -21,6 +21,7 @@
       flex-direction: column;
     }
 
+    /* Navbar */
     .navbar {
       background: #ffffff;
       border-bottom: 1px solid #e2e8f0;
@@ -95,6 +96,9 @@
       font-weight: 700;
       padding: 6px 12px;
       border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .logout-link {
@@ -112,6 +116,11 @@
       width: 100%;
     }
 
+    .search-section {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
     .search-box {
       display: flex;
       background: #ffffff;
@@ -119,7 +128,7 @@
       border-radius: 12px;
       overflow: hidden;
       max-width: 600px;
-      margin: 0 auto 24px auto;
+      margin: 0 auto;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
 
@@ -219,7 +228,7 @@
     .earn-action-btn {
       width: 100%;
       border: none;
-      padding: 10px;
+      padding: 11px;
       border-radius: 8px;
       font-size: 13px;
       font-weight: 700;
@@ -228,7 +237,10 @@
     }
 
     .btn-ads { background: #f59e0b; color: white; }
+    .btn-ads:hover { background: #d97706; }
+
     .btn-tasks { background: #2563eb; color: white; }
+    .btn-tasks:hover { background: #1d4ed8; }
 
     .statement-card {
       background: #ffffff;
@@ -302,13 +314,13 @@
 
     .ad-card {
       background: #ffffff; border-radius: 16px;
-      padding: 24px; max-width: 400px; width: 100%; text-align: center;
+      padding: 24px; max-width: 420px; width: 100%; text-align: center;
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
+  <!-- Navbar -->
   <nav class="navbar">
     <a href="/" class="brand-logo">Price<span>Dekho</span></a>
     <div class="nav-actions">
@@ -334,24 +346,24 @@
     </div>
   </nav>
 
-  <!-- Container -->
+  <!-- Main Container -->
   <div class="container">
     
-    <!-- Search Section (NO EXPLOIT: Zero Coins for Search) -->
-    <div style="text-align: center; margin-bottom: 20px;">
+    <!-- Search Box (Pure Comparison: No Free Coins) -->
+    <section class="search-section">
       <h1 style="font-size: 24px; font-weight: 800; margin-bottom: 6px;">Compare Real Online Prices</h1>
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Search products across Amazon and Flipkart.</p>
+      <p style="font-size: 13px; color: #64748b; margin-bottom: 18px;">Find lowest prices on Amazon & Flipkart across India.</p>
       
       <form method="POST" action="/" class="search-box">
-        <input type="text" name="query" placeholder="Search phones, laptops, shoes..." value="{{ query }}" required>
+        <input type="text" name="query" placeholder="Search phones, laptops, electronics..." value="{{ query }}" required>
         <button type="submit">Compare Prices</button>
       </form>
-    </div>
+    </section>
 
     <!-- Deals Results -->
     {% if deals %}
       <div style="margin-bottom: 30px;">
-        <h3 style="font-size: 16px; margin-bottom: 12px;">Prices for "{{ query }}"</h3>
+        <h3 style="font-size: 16px; margin-bottom: 12px;">Top Results for "{{ query }}"</h3>
         <div class="deals-grid">
           {% for deal in deals %}
             <div class="deal-card">
@@ -364,7 +376,7 @@
               </div>
               <div>
                 <div style="font-size: 16px; font-weight: 800; margin-bottom: 8px;">{{ deal.price }}</div>
-                <a href="{{ deal.link }}" target="_blank" style="display:block; background:#0f172a; color:white; text-align:center; padding:8px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:700;">Open Store →</a>
+                <a href="{{ deal.link }}" target="_blank" style="display:block; background:#0f172a; color:white; text-align:center; padding:8px; border-radius:6px; text-decoration:none; font-size:12px; font-weight:700;">View on Store →</a>
               </div>
             </div>
           {% endfor %}
@@ -374,10 +386,10 @@
 
     {% if current_user.is_authenticated %}
       
-      <!-- Wallet Dashboard (100 Coins = ₹1) -->
+      <!-- Wallet Cards -->
       <div class="wallet-status-grid">
         <div class="wallet-card">
-          <div class="wallet-card-header">💰 Balance</div>
+          <div class="wallet-card-header">💰 Available Balance</div>
           <div class="wallet-card-val">₹{{ (current_user.coins / 100)|round(2) }}</div>
           <div style="font-size: 12px; color: #2563eb; margin-top: 4px;">🪙 {{ current_user.coins }} Coins (100 Coins = ₹1)</div>
         </div>
@@ -405,11 +417,11 @@
         </div>
       </div>
 
-      <!-- Payout Rule Banner (5,000 Coins = ₹50) -->
+      <!-- Minimum Payout Box -->
       <div class="payout-action-box">
         <div>
           <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">🎯 Minimum Payout: ₹50 (5,000 Coins)</h3>
-          <p style="font-size: 13px; color: #cbd5e1;">Current Balance: <strong>{{ current_user.coins }} Coins</strong>. Earn {{ 5000 - current_user.coins }} more coins to unlock.</p>
+          <p style="font-size: 13px; color: #cbd5e1;">Balance: <strong>{{ current_user.coins }} Coins</strong>. Earn {{ 5000 - current_user.coins }} more coins to unlock.</p>
         </div>
         <div>
           {% if current_user.coins >= 5000 %}
@@ -420,28 +432,32 @@
         </div>
       </div>
 
-      <!-- Legitimate Actions Grid -->
+      <!-- Dual Monetization Action Cards -->
       <div class="earning-cards-grid">
+        
+        <!-- Channel 1: Adsterra 15s Ad -->
         <div class="earn-card">
           <div>
-            <span style="font-size: 11px; font-weight: 700; background:#fef3c7; color:#b45309; padding: 2px 8px; border-radius:10px;">📺 15s Sponsored Ad</span>
+            <span style="font-size: 11px; font-weight: 700; background:#fef3c7; color:#b45309; padding: 2px 8px; border-radius:10px;">📺 Daily Sponsored Ad</span>
             <h3 style="font-size: 16px; margin: 8px 0 4px 0;">Watch Live Ad (+1 Coin)</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">Open our sponsor link and watch for full 15 seconds to receive coin reward.</p>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">Open our sponsor ad link and watch for 15 seconds to receive coin reward.</p>
           </div>
           <button class="earn-action-btn btn-ads" id="startAdBtn" onclick="startAdsterraFlow()">▶ Watch 15s Ad (+1 Coin)</button>
         </div>
 
+        <!-- Channel 2: Monetag 30s High Reward Task -->
         <div class="earn-card">
           <div>
-            <span style="font-size: 11px; font-weight: 700; background:#dbeafe; color:#1d4ed8; padding: 2px 8px; border-radius:10px;">🎯 Verified Tasks</span>
-            <h3 style="font-size: 16px; margin: 8px 0 4px 0;">Complete Tasks (Up to 100 Coins)</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">Submit tasks with screenshot reference/ID. Coins credited after admin verification.</p>
+            <span style="font-size: 11px; font-weight: 700; background:#dbeafe; color:#1d4ed8; padding: 2px 8px; border-radius:10px;">🎯 Monetag Sponsored Tasks</span>
+            <h3 style="font-size: 16px; margin: 8px 0 4px 0;">Explore Partner Offers (+5 Coins)</h3>
+            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">Explore our premium sponsor site, interact for 30 seconds, and claim 5 coins.</p>
           </div>
-          <button class="earn-action-btn btn-tasks" onclick="openTasksModal()">⚡ View Tasks & Submit Proof</button>
+          <button class="earn-action-btn btn-tasks" id="startTaskBtn" onclick="startMonetagTaskFlow()">⚡ Complete Task (+5 Coins)</button>
         </div>
+
       </div>
 
-      <!-- History Table -->
+      <!-- Statements -->
       <div class="statement-card">
         <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 12px;">📊 Earning History & Statement</h3>
         <table class="statement-table">
@@ -460,7 +476,7 @@
                 </tr>
               {% endfor %}
             {% else %}
-              <tr><td colspan="3" style="text-align:center; padding:16px; color:#94a3b8;">No activity yet.</td></tr>
+              <tr><td colspan="3" style="text-align:center; padding:16px; color:#94a3b8;">No activity yet. Watch ads or complete tasks to start!</td></tr>
             {% endif %}
           </tbody>
         </table>
@@ -470,49 +486,28 @@
 
   </div>
 
-  <!-- Ad Modal -->
-  <div id="adPlayerModal" class="modal-overlay">
+  <!-- Countdown / Verification Modal -->
+  <div id="rewardModal" class="modal-overlay">
     <div class="ad-card">
-      <div id="adTimerBadge" style="background: #ea580c; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-bottom: 14px;">
-        ⏳ Ad Playing in New Tab (15s remaining)...
+      <div id="modalTimerBadge" style="background: #ea580c; color: white; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; margin-bottom: 14px;">
+        ⏳ Waiting for timer...
       </div>
-      <p style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Ad page has opened in new tab. Do not close it before 15 seconds.</p>
-      <button id="claimRewardBtn" style="width: 100%; background: #16a34a; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; display: none; cursor:pointer;" onclick="claimFinishedAdReward()">
-        🎉 Claim +1 Coin Now
+      <h3 id="modalTitle" style="font-size: 16px; font-weight: 800; margin-bottom: 6px;">Sponsor Active in New Tab</h3>
+      <p id="modalDesc" style="font-size: 13px; color: #64748b; line-height: 1.4; margin-bottom: 16px;">
+        Sponsor page naye tab me open ho chuki hai. Kripya page band na karein aur screen par explore/scroll karein.
+      </p>
+      <button id="modalClaimBtn" style="width: 100%; background: #16a34a; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 800; font-size: 14px; display: none; cursor:pointer;">
+        🎉 Claim Reward
       </button>
     </div>
   </div>
 
-  <!-- Secure Task Modal (Manual Proof Required) -->
-  {% if current_user.is_authenticated %}
-  <div id="tasksModal" class="modal-overlay">
-    <div class="modal-card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
-        <h2 style="font-size: 17px; font-weight: 800;">🎯 Complete & Verify Tasks</h2>
-        <button class="close-btn" onclick="closeTasksModal()">&times;</button>
-      </div>
-
-      <div style="margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">Task 1: Complete 100% Profile (+50 Coins)</div>
-        <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Fill full name, verified mobile, and UPI details.</p>
-        <input type="text" id="proof_profile" placeholder="Enter your registered Mobile number" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; margin-bottom:6px;">
-        <button class="earn-action-btn btn-tasks" onclick="submitTask('Profile KYC Completion', 'proof_profile', 50)">Submit for Review</button>
-      </div>
-
-      <div style="margin-bottom: 16px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
-        <div style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">Task 2: Share PriceDekho on WhatsApp (+20 Coins)</div>
-        <p style="font-size: 12px; color: #64748b; margin-bottom: 8px;">Share link with 3 shopping groups or friends.</p>
-        <input type="text" id="proof_whatsapp" placeholder="Enter names/groups where you shared" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; margin-bottom:6px;">
-        <button class="earn-action-btn btn-tasks" onclick="submitTask('WhatsApp Share Refer', 'proof_whatsapp', 20)">Submit for Review</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Profile Modal -->
+  {% if current_user.is_authenticated %}
   <div id="profileModal" class="modal-overlay">
     <div class="modal-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
-        <h2 style="font-size: 17px; font-weight: 800;">KYC & Withdrawal Settings</h2>
+        <h2 style="font-size: 17px; font-weight: 800;">KYC & Withdrawal Details</h2>
         <button class="close-btn" onclick="closeProfileModal()">&times;</button>
       </div>
       <form method="POST" action="/profile/update">
@@ -525,10 +520,20 @@
           <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="10-digit number" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" required>
         </div>
         <div style="margin-bottom: 10px;">
-          <label style="font-size:12px; font-weight:700;">UPI ID (For ₹50 Bank Transfer)</label>
+          <label style="font-size:12px; font-weight:700;">UPI ID (For ₹50 Cash Transfer)</label>
           <input type="text" name="upi_id" value="{{ current_user.upi_id or '' }}" placeholder="name@upi" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;" required>
         </div>
-        <button type="submit" style="width:100%; background:#0f172a; color:white; padding:10px; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Save Profile Details</button>
+        <div style="display:flex; gap: 8px; margin-bottom: 14px;">
+          <div style="flex:2;">
+            <label style="font-size:12px; font-weight:700;">Bank A/C</label>
+            <input type="text" name="bank_account" value="{{ current_user.bank_account or '' }}" placeholder="A/C Number" style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:12px; font-weight:700;">IFSC Code</label>
+            <input type="text" name="bank_ifsc" value="{{ current_user.bank_ifsc or '' }}" placeholder="SBIN..." style="width:100%; padding:8px; border:1px solid #cbd5e1; border-radius:6px;">
+          </div>
+        </div>
+        <button type="submit" style="width:100%; background:#0f172a; color:white; padding:10px; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Save Details</button>
       </form>
     </div>
   </div>
@@ -537,13 +542,12 @@
   <script>
     function openProfileModal() { document.getElementById('profileModal').style.display = 'flex'; }
     function closeProfileModal() { document.getElementById('profileModal').style.display = 'none'; }
-    function openTasksModal() { document.getElementById('tasksModal').style.display = 'flex'; }
-    function closeTasksModal() { document.getElementById('tasksModal').style.display = 'none'; }
 
-    // Accurate AdBlocker Check
+    // Accurate AdBlocker Check (No False Positives)
     async function checkAdBlocker() {
       return new Promise((resolve) => {
         const adTest = document.createElement('div');
+        adTest.innerHTML = '&nbsp;';
         adTest.className = 'adsbox ad-unit banner-ad pub_300x250';
         adTest.style.cssText = 'position:absolute!important; top:-9999px!important; left:-9999px!important; width:1px!important; height:1px!important;';
         document.body.appendChild(adTest);
@@ -555,7 +559,7 @@
       });
     }
 
-    // Secure Ad Flow
+    // 1. Flow: Adsterra 15s Ad (+1 Coin)
     async function startAdsterraFlow() {
       const btn = document.getElementById('startAdBtn');
       btn.innerText = "Checking...";
@@ -581,17 +585,20 @@
           return;
         }
 
-        const adModal = document.getElementById('adPlayerModal');
-        adModal.style.display = 'flex';
-        let seconds = 15;
-        const timerBadge = document.getElementById('adTimerBadge');
-        const claimBtn = document.getElementById('claimRewardBtn');
+        const modal = document.getElementById('rewardModal');
+        const timerBadge = document.getElementById('modalTimerBadge');
+        const claimBtn = document.getElementById('modalClaimBtn');
+        document.getElementById('modalTitle').innerText = "Sponsored Ad Playing (15s)";
+        document.getElementById('modalDesc').innerText = "Ad naye tab me open ho chuki hai. Kripya use 15 seconds tak chalne dein.";
+        
+        modal.style.display = 'flex';
         claimBtn.style.display = 'none';
 
+        let seconds = 15;
         const interval = setInterval(() => {
           if (adWindow.closed && seconds > 2) {
             clearInterval(interval);
-            adModal.style.display = 'none';
+            modal.style.display = 'none';
             alert("❌ Closed too early! Ad must stay open for 15 seconds.");
             btn.innerText = "▶ Watch 15s Ad (+1 Coin)";
             btn.disabled = false;
@@ -603,7 +610,21 @@
           } else {
             clearInterval(interval);
             timerBadge.innerText = "✅ Ad Completed!";
+            timerBadge.style.background = "#16a34a";
+            claimBtn.innerText = "🎉 Claim +1 Coin";
             claimBtn.style.display = "block";
+            claimBtn.onclick = async () => {
+              claimBtn.disabled = true;
+              const cRes = await fetch('/api/claim-ad-reward', { method: 'POST' });
+              const cData = await cRes.json();
+              if (cData.success) {
+                alert("🎉 Success! +1 Coin added to your wallet.");
+                window.location.reload();
+              } else {
+                alert(cData.message);
+                claimBtn.disabled = false;
+              }
+            };
           }
         }, 1000);
 
@@ -614,44 +635,85 @@
       }
     }
 
-    async function claimFinishedAdReward() {
-      try {
-        const res = await fetch('/api/claim-ad-reward', { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-          alert(`🎉 Reward Claimed: +${data.reward} Coin added!`);
-          window.location.reload();
-        } else {
-          alert(data.message);
-        }
-      } catch (e) { alert("Verification failed!"); }
-    }
+    // 2. Flow: Monetag 30s High Reward Task (+5 Coins)
+    async function startMonetagTaskFlow() {
+      const btn = document.getElementById('startTaskBtn');
+      btn.innerText = "Connecting Partner Offer...";
+      btn.disabled = true;
 
-    // Submit Task for Admin Approval
-    async function submitTask(taskName, inputId, coins) {
-      const proofVal = document.getElementById(inputId).value.trim();
-      if (!proofVal) {
-        alert("Kripya proof/reference details enter karein!");
+      const hasAdBlock = await checkAdBlocker();
+      if (hasAdBlock) {
+        alert("⚠️ AdBlocker Detected! Please disable AdBlocker to access sponsor tasks.");
+        btn.innerText = "⚡ Complete Task (+5 Coins)";
+        btn.disabled = false;
         return;
       }
+
       try {
-        const res = await fetch('/api/submit-task-proof', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task_name: taskName, proof: proofVal, reward: coins })
-        });
+        const res = await fetch('/api/load-monetag-task');
         const data = await res.json();
-        alert(data.message);
-        if (data.success) {
-          closeTasksModal();
+        const taskWindow = window.open(data.task_url, '_blank');
+
+        if (!taskWindow || taskWindow.closed || typeof taskWindow.closed === 'undefined') {
+          alert("⚠️ Browser blocked offer tab! Please allow popups to open sponsor tasks.");
+          btn.innerText = "⚡ Complete Task (+5 Coins)";
+          btn.disabled = false;
+          return;
         }
+
+        const modal = document.getElementById('rewardModal');
+        const timerBadge = document.getElementById('modalTimerBadge');
+        const claimBtn = document.getElementById('modalClaimBtn');
+        document.getElementById('modalTitle').innerText = "Monetag Partner Task Active (30s)";
+        document.getElementById('modalDesc').innerText = "Sponsor offer page naye tab me open hai. Wahan 30 seconds explore karein ya scroll karein taaki task verify ho sake.";
+        
+        modal.style.display = 'flex';
+        claimBtn.style.display = 'none';
+
+        let seconds = 30;
+        const interval = setInterval(() => {
+          if (taskWindow.closed && seconds > 3) {
+            clearInterval(interval);
+            modal.style.display = 'none';
+            alert("❌ Task Closed Too Early! Task complete karne ke liye pure 30 seconds explore karna zaroori hai.");
+            btn.innerText = "⚡ Complete Task (+5 Coins)";
+            btn.disabled = false;
+            return;
+          }
+          seconds--;
+          if (seconds > 0) {
+            timerBadge.innerText = `⏳ Task Active in Partner Window (${seconds}s remaining)...`;
+          } else {
+            clearInterval(interval);
+            timerBadge.innerText = "✅ Task Verification Completed!";
+            timerBadge.style.background = "#16a34a";
+            claimBtn.innerText = "🎉 Claim +5 Coins Now";
+            claimBtn.style.display = "block";
+            claimBtn.onclick = async () => {
+              claimBtn.disabled = true;
+              const cRes = await fetch('/api/claim-monetag-task', { method: 'POST' });
+              const cData = await cRes.json();
+              if (cData.success) {
+                alert("🎉 Congratulations! Task successfully verified. +5 Coins added!");
+                window.location.reload();
+              } else {
+                alert(cData.message);
+                claimBtn.disabled = false;
+              }
+            };
+          }
+        }, 1000);
+
       } catch (e) {
-        alert("Submission failed!");
+        alert("Network Error!");
+        btn.innerText = "⚡ Complete Task (+5 Coins)";
+        btn.disabled = false;
       }
     }
 
+    // Payout Request
     async function submitPayoutRequest() {
-      if (!confirm("Confirm ₹50 payout request? 5,000 Coins will be deducted.")) return;
+      if (!confirm("Kya aap ₹50 payout request submit karna chahte hain? 5,000 Coins deduct ho jayenge.")) return;
       try {
         const res = await fetch('/api/request-payout', { method: 'POST' });
         const data = await res.json();
